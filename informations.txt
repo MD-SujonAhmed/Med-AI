@@ -1,5 +1,5 @@
 $ python manage.py createsuperuser
-Email: users@gmail.com
+Email: usm
 Full name: Md Sujon
 Password: 12345
 Password (again):12345
