@@ -15,3 +15,7 @@ class SingUpSerializer(serializers.ModelSerializer):
         )
         return user
         
+class OtpVerificationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
+    purpose = serializers.ChoiceField(choices=['signup', 'password_reset'])

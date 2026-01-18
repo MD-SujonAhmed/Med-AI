@@ -9,3 +9,10 @@ This password is entirely numeric.
 Bypass password validation and create user anyway? [y/N]: y
 Superuser created successfully.
 (.venv)
+
+// Exampule in body json
+{
+  "email": "user@example.com",
+  "full_name": "John Doe",
+  "password": "StrongPassword123"
+}
