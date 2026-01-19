@@ -23,7 +23,7 @@ Thank you,
 Support Team
 """
 
-    elif purpose == "forgot_password":
+    elif purpose == "password_reset":
         subject = "Password Reset OTP"
         message = f"""
 Hello,
