@@ -1,9 +1,14 @@
 asgiref==3.11.0
+decouple==0.0.7
 Django==6.0.1
 django-redis==6.0.0
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
+dotenv==0.9.9
+pillow==12.1.0
 PyJWT==2.10.1
+python-decouple==3.8
+python-dotenv==1.2.1
 redis==7.1.0
 sqlparse==0.5.5
 tzdata==2025.3
