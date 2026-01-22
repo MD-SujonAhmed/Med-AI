@@ -2,12 +2,12 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.py",
+      "src": "MedAi/wsgi.py",
       "use": "@vercel/python",
       "config": { "runtime": "python3.9", "maxLambdaSize": "15mb" }
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "api/index.py" }
+    { "src": "/(.*)", "dest": "MedAi/wsgi.py" }
   ]
 }
