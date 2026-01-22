@@ -2,12 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
-from .serializers import OtpVerificationSerializer, ResetPasswordSerializer, SingUpSerializer
+from .serializers import OtpVerificationSerializer, ResetPasswordSerializer, SingUpSerializer, UserProfileSerializer
 from .models import Users
 from .utils.otp import generate_otp, store_otp, verify_otp, is_password_reset_verified
 from .utils.email import send_otp_email  # make sure email_utils.py
+from rest_framework.viewsets import ModelViewSet
 
-# ----------------- Signup -----------------
+# ----------------- Signup ----------------- 
 class SignUpView(APIView):
     def post(self, request):
         serializer = SingUpSerializer(data=request.data)
@@ -114,3 +115,7 @@ class LoginView(APIView):
             return Response({"error": "User not verified"}, status=status.HTTP_400_BAD_REQUEST)
         refresh = RefreshToken.for_user(user)
         return Response({"refresh": str(refresh), "access": str(refresh.access_token)}, status=status.HTTP_200_OK)
+
+class UserProfileView(ModelViewSet):
+    queryset = Users.objects.all()
+    serializer_class = UserProfileSerializer

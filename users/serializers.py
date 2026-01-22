@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Users
+from .models import Users,UserProfile
 
 class SingUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -44,3 +44,11 @@ class OtpVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6)
     purpose = serializers.ChoiceField(choices=['signup', 'password_reset'])
+    
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['full_name', 'email', 'address', 'Age', 'Health_Conditions', 'Wakeup_time', 'Breakfast_time', 'Lunch_time', 'Dinner_time']
+        
+        

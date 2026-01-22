@@ -1,3 +1,4 @@
+import time
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
@@ -47,3 +48,27 @@ class Users(AbstractBaseUser, PermissionsMixin):
         
         return self.full_name
     
+
+# class UsersProfile(models.Model):
+#     user = models.OneToOneField(Users, on_delete=models.CASCADE, related_name='profile')
+#     bio = models.TextField(blank=True, null=True)
+#     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+
+#     def __str__(self):
+#         return f"{self.user.full_name}'s Profile"
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(Users, on_delete=models.CASCADE, related_name='profile')
+    # bio = models.TextField(blank=True, null=True)
+    # profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    full_name=models.OneToOneField(Users, on_delete=models.CASCADE, related_name='full_name_profile')
+    email=models.OneToOneField(Users, on_delete=models.CASCADE, related_name='email_profile')  
+    address=models.CharField(max_length=255, blank=True, null=True)
+    Age=models.IntegerField(blank=True, null=True)
+    Health_Conditions=models.TextField(blank=True, null=True) 
+    Wakeup_time=models.TimeField(blank=True, null=True)
+    Breakfast_time=models.TimeField(blank=True, null=True)
+    Lunch_time=models.TimeField(blank=True, null=True)
+    Dinner_time=models.TimeField(blank=True, null=True)
+
+    #  
