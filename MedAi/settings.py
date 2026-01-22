@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-eqfq4=n$10h9pvcz1#=3fem65$c&eh7x)g8nsygt9m(cq(#u(#')
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'users.Users'  # Custom user model
