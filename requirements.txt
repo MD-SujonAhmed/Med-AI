@@ -1,5 +1,4 @@
 asgiref==3.11.0
-decouple==0.0.7
 Django==6.0.1
 django-redis==6.0.0
 djangorestframework==3.16.1
