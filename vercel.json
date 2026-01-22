@@ -4,7 +4,6 @@
     {
       "src": "MedAi/wsgi.py",
       "use": "@vercel/python",
-      "config": { "runtime": "python3.9", "maxLambdaSize": "15mb" }
     }
   ],
   "routes": [
