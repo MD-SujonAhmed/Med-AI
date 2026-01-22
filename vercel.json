@@ -3,7 +3,7 @@
   "builds": [
     {
       "src": "MedAi/wsgi.py",
-      "use": "@vercel/python",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
