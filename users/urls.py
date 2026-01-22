@@ -8,6 +8,7 @@ urlpatterns = [
     path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
     path('login/', LoginView.as_view(), name='login'),
+    path('user-profile/', UserProfileView.as_view({'get': 'list', 'post': 'create'}), name='user_profile'),
     
     
     
