@@ -8,3 +8,4 @@ application = get_wsgi_application()
 # Vercel expects `app` or `handler`
 app = application
 handler = application
+# Print("Hello World")
