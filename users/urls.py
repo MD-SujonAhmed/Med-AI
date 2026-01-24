@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginView, RequestOTPView, ResendOTPView, SignUpView, VerifyOTPView, ResetPasswordView, UserProfileView
+from .views import LoginView, RequestOTPView, ResendOTPView, SignUpView, VerifyOTPView, ResetPasswordView, MyProfileView
 
 urlpatterns = [
     path('signup/', SignUpView.as_view(), name='signup'),
@@ -8,7 +8,8 @@ urlpatterns = [
     path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
     path('login/', LoginView.as_view(), name='login'),
-    path('user-profile/', UserProfileView.as_view({'get': 'list', 'post': 'create'}), name='user_profile'),
+    # JWT required
+    path("profile/", MyProfileView.as_view(), name="my_profile"),
     
     
     
