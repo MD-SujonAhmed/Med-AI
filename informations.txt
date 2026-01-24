@@ -16,3 +16,6 @@ Superuser created successfully.
   "full_name": "John Doe",
   "password": "StrongPassword123"
 }
+
+git pull   # কাজ শুরুর আগে
+git push   # কাজ শেষ করে
