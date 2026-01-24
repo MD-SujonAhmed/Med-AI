@@ -64,4 +64,4 @@ class UserProfile(models.Model):
     Lunch_time=models.TimeField(blank=True, null=True)
     Dinner_time=models.TimeField(blank=True, null=True)
 
-    #  
+    
