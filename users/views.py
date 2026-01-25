@@ -5,9 +5,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import (
+    SingUpSerializer,
     OtpVerificationSerializer,
     ResetPasswordSerializer,
-    SingUpSerializer,
     UserProfileSerializer,
 )
 from .models import Users, UserProfile
@@ -15,8 +15,16 @@ from .utils.otp import generate_otp, store_otp, verify_otp, is_password_reset_ve
 from .utils.email import send_otp_email
 
 
-# ----------------- Signup -----------------
+# -----------------------------
+#  User Registration / Signup
+# -----------------------------
 class SignUpView(APIView):
+    """
+    User Sign Up
+    - Save user as inactive
+    - Generate OTP
+    - Send OTP email
+    """
     def post(self, request):
         serializer = SingUpSerializer(data=request.data)
         if serializer.is_valid():
@@ -25,20 +33,23 @@ class SignUpView(APIView):
             store_otp(user.email, otp, purpose="signup")
             send_otp_email(user.email, otp, "signup")
             return Response(
-                {"message": f" OTP sent to {user.email}."},
+                {"message": f"OTP sent to {user.email} for account verification."},
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ----------------- Request OTP -----------------
+# -----------------------------
+#  OTP Management
+# -----------------------------
 class RequestOTPView(APIView):
+    """Request OTP for signup or password reset"""
     def post(self, request):
         email = request.data.get("email")
         purpose = request.data.get("purpose")
         if not email or not purpose:
             return Response(
-                {"error": "email and purpose are required"},
+                {"error": "Both email and purpose are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -46,13 +57,13 @@ class RequestOTPView(APIView):
         store_otp(email, otp, purpose=purpose)
         send_otp_email(email, otp, purpose)
         return Response(
-            {"message": f"OTP sent to {email} for {purpose}. Please verify."},
+            {"message": f"OTP sent to {email} for {purpose}."},
             status=status.HTTP_200_OK,
         )
 
 
-# ----------------- Verify OTP -----------------
 class VerifyOTPView(APIView):
+    """Verify OTP for signup or password reset"""
     def post(self, request):
         serializer = OtpVerificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -62,9 +73,7 @@ class VerifyOTPView(APIView):
         purpose = serializer.validated_data["purpose"]
 
         if not verify_otp(email, otp, purpose):
-            return Response(
-                {"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
 
         if purpose == "signup":
             try:
@@ -72,38 +81,28 @@ class VerifyOTPView(APIView):
                 user.is_active = True
                 user.save()
             except Users.DoesNotExist:
-                return Response(
-                    {"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND
-                )
-            return Response(
-                {"message": "Signup successful. Account activated."},
-                status=status.HTTP_200_OK,
-            )
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({"message": "Signup successful. Account activated."}, status=status.HTTP_200_OK)
 
         elif purpose == "password_reset":
-            return Response(
-                {"message": "OTP verified. You can now reset your password.", "email": email},
-                status=status.HTTP_200_OK,
-            )
+            return Response({"message": "OTP verified. You can now reset your password.", "email": email}, status=status.HTTP_200_OK)
 
 
-# -----------------         Resend OTP           -----------------
 class ResendOTPView(APIView):
+    """Resend OTP for signup verification"""
     def post(self, request):
         email = request.data.get("email")
         if not email:
-            return Response(
-                {"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = Users.objects.get(email=email)
         except Users.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if user.is_active:
-            return Response(
-                {"error": "User already verified"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "User already verified"}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = generate_otp()
         store_otp(email, otp, purpose="signup")
@@ -111,8 +110,11 @@ class ResendOTPView(APIView):
         return Response({"message": "OTP resent successfully"}, status=status.HTTP_200_OK)
 
 
-# ----------------- Reset Password -----------------
+# -----------------------------
+#  Password Reset
+# -----------------------------
 class ResetPasswordView(APIView):
+    """Reset password after OTP verification"""
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -120,46 +122,40 @@ class ResetPasswordView(APIView):
             new_password = serializer.validated_data["new_password"]
 
             if not is_password_reset_verified(email):
-                return Response(
-                    {"error": "OTP not verified yet"}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error": "OTP not verified yet"}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
                 user = Users.objects.get(email=email)
                 user.set_password(new_password)
                 user.save()
             except Users.DoesNotExist:
-                return Response(
-                    {"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND
-                )
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
             # Clear OTP verified flag
             from django.core.cache import cache
             cache.delete(f"{email}_password_reset_verified")
 
-            return Response(
-                {"message": "Password updated successfully"},
-                status=status.HTTP_200_OK,
-            )
+            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ----------------- Login -----------------
+# -----------------------------
+#  User Login
+# -----------------------------
 class LoginView(APIView):
+    """Authenticate user and return JWT tokens"""
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
 
         if not email or not password:
-            return Response(
-                {"error": "Email and password required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = Users.objects.get(email=email)
         except Users.DoesNotExist:
-            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if not user.check_password(password):
             return Response({"error": "Incorrect password"}, status=status.HTTP_400_BAD_REQUEST)
@@ -174,17 +170,19 @@ class LoginView(APIView):
         )
 
 
-# ----------------- My Profile (GET + PATCH) -----------------
+# -----------------------------
+#  User Profile
+# -----------------------------
 class MyProfileView(APIView):
+    """
+    Retrieve or update logged-in user's profile
+    """
     permission_classes = [IsAuthenticated]
 
     def _get_profile(self, user):
         profile, created = UserProfile.objects.get_or_create(
             user=user,
-            defaults={
-                "full_name": user.full_name,
-                "email": user.email,
-            },
+            defaults={"full_name": user.full_name, "email": user.email},
         )
         return profile
 

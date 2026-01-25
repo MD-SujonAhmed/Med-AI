@@ -1,19 +1,25 @@
 from django.urls import path
-from .views import LoginView, RequestOTPView, ResendOTPView, SignUpView, VerifyOTPView, ResetPasswordView, MyProfileView
+from .views import (
+    SignUpView,
+    RequestOTPView,
+    VerifyOTPView,
+    ResendOTPView,
+    ResetPasswordView,
+    LoginView,
+    MyProfileView,
+)
 
 urlpatterns = [
-    path('signup/', SignUpView.as_view(), name='signup'),
-    path('forgot-password-otp/', RequestOTPView.as_view(), name='forgot_password_otp'),
-    path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
-    path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
-    path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
-    path('login/', LoginView.as_view(), name='login'),
-    # JWT required
-    path("profile/", MyProfileView.as_view(), name="my_profile"),
-    
-    
-    
-]
+    # User Registration & OTP
+    path('signup/', SignUpView.as_view(), name='user_signup'),
+    path('otp/request/', RequestOTPView.as_view(), name='request_otp'),
+    path('otp/verify/', VerifyOTPView.as_view(), name='verify_otp'),
+    path('otp/resend/', ResendOTPView.as_view(), name='resend_otp'),
 
-# SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = 'YOUR_GOOGLE_CLIENT_ID'
-# SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'YOUR_GOOGLE_CLIENT_SECRET'
+    # Authentication
+    path('login/', LoginView.as_view(), name='user_login'),
+    path('password/reset/', ResetPasswordView.as_view(), name='reset_password'),
+
+    # User Profile ,# JWT required 
+    path('profile/', MyProfileView.as_view(), name='user_profile'),
+]
