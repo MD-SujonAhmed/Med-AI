@@ -193,7 +193,7 @@ class MyProfileView(APIView):
 
     def patch(self, request):
         profile = self._get_profile(request.user)
-        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        serializer = UserProfileSerializer(profile, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
