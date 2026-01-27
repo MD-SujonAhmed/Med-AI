@@ -50,7 +50,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UserProfile
-        fields = ['full_name', 'email', 'address', 'Age', 'Health_Conditions', 'Wakeup_time', 'Breakfast_time', 'Lunch_time', 'Dinner_time']
+        fields = ['profile_picture', 'full_name', 'email', 'address', 'Age', 'Health_Conditions', 'Wakeup_time', 'Breakfast_time', 'Lunch_time', 'Dinner_time']
         read_only_fields = ['email']  # email should not be editable
         
         

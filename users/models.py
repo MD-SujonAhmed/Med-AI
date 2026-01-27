@@ -52,8 +52,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(Users, on_delete=models.CASCADE, related_name='profile')
-    # bio = models.TextField(blank=True, null=True)
-    # profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     full_name = models.CharField(max_length=100)
     email = models.EmailField(max_length=254, unique=True)
     address=models.CharField(max_length=255, blank=True, null=True)

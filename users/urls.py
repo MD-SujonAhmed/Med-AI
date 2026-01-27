@@ -22,4 +22,4 @@ urlpatterns = [
 
     # User Profile ,# JWT required 
     path('profile/', MyProfileView.as_view(), name='user_profile'),
-]
+] 
