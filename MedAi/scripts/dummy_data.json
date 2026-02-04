@@ -1,0 +1,104 @@
+{
+  "doctors": [
+    {
+      "name": "Dr Rahman",
+      "sex": "Male",
+      "specialization": "Cardiology",
+      "hospital_name": "Square Hospital",
+      "designation": "Senior Consultant"
+    },
+    {
+      "name": "Dr Sultana",
+      "sex": "Female",
+      "specialization": "Medicine",
+      "hospital_name": "United Hospital",
+      "designation": "Consultant"
+    },
+    {
+      "name": "Dr Hasan",
+      "sex": "Male",
+      "specialization": "Neurology",
+      "hospital_name": "Apollo Hospital",
+      "designation": "Assistant Professor"
+    }
+  ],
+
+  "users": [
+    {
+      "email": "user1@test.com",
+      "full_name": "User One",
+      "password": "123456"
+    },
+    {
+      "email": "user2@test.com",
+      "full_name": "User Two",
+      "password": "123456"
+    },
+    {
+      "email": "user3@test.com",
+      "full_name": "User Three",
+      "password": "123456"
+    }
+  ],
+
+  "prescriptions": [
+    {
+      "user_email": "user1@test.com",
+      "doctor_name": "Dr Rahman",
+      "image": "prescriptions/p1.jpg",
+      "patient": {
+        "name": "Patient A",
+        "age": 45,
+        "sex": "Male",
+        "health_issues": "Diabetes"
+      },
+      "medicines": [
+        {
+          "name": "Napa",
+          "how_many_time": 2,
+          "how_many_day": 5,
+          "stock": 20
+        },
+        {
+          "name": "Aspirin",
+          "how_many_time": 1,
+          "how_many_day": 10,
+          "stock": 15
+        }
+      ],
+      "medical_tests": [
+        {
+          "test_name": "Blood Sugar"
+        },
+        {
+          "test_name": "ECG"
+        }
+      ]
+    },
+
+    {
+      "user_email": "user2@test.com",
+      "doctor_name": "Dr Sultana",
+      "image": "prescriptions/p2.jpg",
+      "patient": {
+        "name": "Patient B",
+        "age": 30,
+        "sex": "Female",
+        "health_issues": "Fever"
+      },
+      "medicines": [
+        {
+          "name": "Paracetamol",
+          "how_many_time": 3,
+          "how_many_day": 3,
+          "stock": 30
+        }
+      ],
+      "medical_tests": [
+        {
+          "test_name": "CBC"
+        }
+      ]
+    }
+  ]
+}

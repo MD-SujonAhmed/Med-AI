@@ -1,0 +1,21 @@
+$ python manage.py createsuperuser
+Email: user@gmail.com
+Full name: sujon
+Password: 1234
+Password (again):1234
+This password is too short. It must contain at least 8 characters.
+This password is too common.
+This password is entirely numeric.
+Bypass password validation and create user anyway? [y/N]: y
+Superuser created successfully.
+(.venv)
+
+// Exampule in body json
+{
+  "email": "user@example.com",
+  "full_name": "John Doe",
+  "password": "StrongPassword123"
+}
+
+git pull   # কাজ শুরুর আগে
+git push   # কাজ শেষ করে

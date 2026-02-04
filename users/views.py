@@ -1,0 +1,294 @@
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+
+from .serializers import (
+    ChangePasswordSerializer,
+    DeactivateAccountSerializer,
+    SingUpSerializer,
+    OtpVerificationSerializer,
+    ResetPasswordSerializer,
+    UserProfileSerializer,
+    AdminProfileSerializer,
+    AdminChangePasswordSerializer
+)
+from .models import Users, UserProfile
+from .utils.otp import generate_otp, store_otp, verify_otp, is_password_reset_verified
+from .utils.email import send_otp_email
+from .permissions import IsAdminRole
+
+
+# -----------------------------
+#  User Registration / Signup
+# -----------------------------
+class SignUpView(APIView):
+    """
+    User Sign Up
+    - Save user as inactive
+    - Generate OTP
+    - Send OTP email
+    """
+    def post(self, request):
+        serializer = SingUpSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save(is_active=False)
+            otp = generate_otp()
+            store_otp(user.email, otp, purpose="signup")
+            send_otp_email(user.email, otp, "signup")
+            return Response(
+                {"message": f"OTP sent to {user.email} for account verification."},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# -----------------------------
+#  OTP Management
+# -----------------------------
+class RequestOTPView(APIView):
+    """Request OTP for signup or password reset"""
+    def post(self, request):
+        email = request.data.get("email")
+        purpose = request.data.get("purpose")
+        if not email or not purpose:
+            return Response(
+                {"error": "Both email and purpose are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        otp = generate_otp()
+        store_otp(email, otp, purpose=purpose)
+        send_otp_email(email, otp, purpose)
+        return Response(
+            {"message": f"OTP sent to {email} for {purpose}."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class VerifyOTPView(APIView):
+    """Verify OTP for signup or password reset"""
+    def post(self, request):
+        serializer = OtpVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+        otp = serializer.validated_data["otp"]
+        purpose = serializer.validated_data["purpose"]
+
+        if not verify_otp(email, otp, purpose):
+            return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if purpose == "signup":
+            try:
+                user = Users.objects.get(email=email)
+                user.is_active = True
+                user.save()
+            except Users.DoesNotExist:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({"message": "Signup successful. Account activated."}, status=status.HTTP_200_OK)
+
+        elif purpose == "password_reset":
+            return Response({"message": "OTP verified. You can now reset your password.", "email": email}, status=status.HTTP_200_OK)
+
+
+class ResendOTPView(APIView):
+    """Resend OTP for signup verification"""
+    def post(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = Users.objects.get(email=email)
+        except Users.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.is_active:
+            return Response({"error": "User already verified"}, status=status.HTTP_400_BAD_REQUEST)
+
+        otp = generate_otp()
+        store_otp(email, otp, purpose="signup")
+        send_otp_email(email, otp, "signup")
+        return Response({"message": "OTP resent successfully"}, status=status.HTTP_200_OK)
+
+
+# -----------------------------
+#  Password Reset
+# -----------------------------
+class ResetPasswordView(APIView):
+    """Reset password after OTP verification"""
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data["email"]
+            new_password = serializer.validated_data["new_password"]
+
+            if not is_password_reset_verified(email):
+                return Response({"error": "OTP not verified yet"}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                user = Users.objects.get(email=email)
+                user.set_password(new_password)
+                user.save()
+            except Users.DoesNotExist:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Clear OTP verified flag
+            from django.core.cache import cache
+            cache.delete(f"{email}_password_reset_verified")
+
+            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# -----------------------------
+#  User Login
+# -----------------------------
+class LoginView(APIView):
+    """Authenticate user and return JWT tokens"""
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if not email or not password:
+            return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = Users.objects.get(email=email)
+        except Users.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.check_password(password):
+            return Response({"error": "Incorrect password"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user.is_active:
+            return Response({"error": "User not verified"}, status=status.HTTP_400_BAD_REQUEST)
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {"message": "Login successful", "id": user.id, "refresh": str(refresh), "access": str(refresh.access_token)},
+            status=status.HTTP_200_OK,
+        )
+
+
+# -----------------------------
+#  User Profile
+# -----------------------------
+class MyProfileView(APIView):
+    """
+    Retrieve or update logged-in user's profile
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _get_profile(self, user):
+        profile, created = UserProfile.objects.get_or_create(
+            user=user
+        )
+        return profile
+    def get(self, request):
+        profile = self._get_profile(request.user)
+        serializer = UserProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        profile = self._get_profile(request.user)
+        serializer = UserProfileSerializer(profile, data=request.data, partial=True, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    def put(self, request):
+        profile = self._get_profile(request.user)
+        serializer = UserProfileSerializer(profile, data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+# -----------------------------
+#  Change Password (Logged-in User)
+# -----------------------------
+class ChangePasswordView(APIView):
+    """
+    Change password for authenticated user
+    - Requires JWT token
+    - Validates current password
+    - Matches new password with confirm password
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Password changed successfully."},
+                status=status.HTTP_200_OK
+            )
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+# -----------------------------
+#  Deactivate Account
+# -----------------------------
+class DeactivateAccountView(APIView):
+    """
+     - JWT token লাগবে (logged-in user)
+    - Password confirm করতে হবে
+    - Ac   User এর account deactivate করবে
+    - Account deactivate হবে (is_active = False)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = DeactivateAccountSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            user = request.user
+            user.is_active = False  # ✅ Account deactivate করলাম
+            user.save()
+            
+            return Response(
+                {"message": "Account deactivated successfully."},
+                status=status.HTTP_200_OK
+            )
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class AdminProfileView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def get(self, request):
+        serializer = AdminProfileSerializer(request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+    
+class AdminUpdatePasswordView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def put(self, request):
+        serializer = AdminChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Password updated successfully"},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
