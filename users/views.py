@@ -1,8 +1,11 @@
+from datetime import timedelta
+from django.utils.dateparse import parse_date
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from prescriptions.models import Medicine, Prescription
 
 from .serializers import (
     ChangePasswordSerializer,
@@ -17,7 +20,7 @@ from .serializers import (
 from .models import Users, UserProfile
 from .utils.otp import generate_otp, store_otp, verify_otp, is_password_reset_verified
 from .utils.email import send_otp_email
-from .permissions import IsAdminRole
+from .permissions import IsAdminOrSuperUser
 
 
 # -----------------------------
@@ -265,7 +268,7 @@ class DeactivateAccountView(APIView):
 
 
 class AdminProfileView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminRole]
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
     def get(self, request):
         serializer = AdminProfileSerializer(request.user)
@@ -275,7 +278,7 @@ class AdminProfileView(APIView):
 
     
 class AdminUpdatePasswordView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminRole]
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
     def put(self, request):
         serializer = AdminChangePasswordSerializer(
@@ -292,3 +295,66 @@ class AdminUpdatePasswordView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+# ----------------------------- Dashboard View
+
+class DashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, date):
+        selected_date = parse_date(date)
+
+        response = {
+            "Morning": [],
+            "Afternoon": [],
+            "Evening": [],
+            "Night": [],
+            "next_appointment": []
+        }
+
+        medicines = Medicine.objects.select_related("prescription", "prescription__doctor")
+
+        for med in medicines:
+            start_date = med.prescription.created_at.date()
+            end_date = start_date + timedelta(days=med.how_many_day - 1)
+
+            if not (start_date <= selected_date <= end_date):
+                continue
+
+            med_data = {
+                "medicine_name": med.name,
+                "before_meal": med.before_meal,
+                "after_meal": med.after_meal
+            }
+
+            if med.how_many_time == 1:
+                response["Morning"].append(med_data)
+
+            elif med.how_many_time == 2:
+                response["Morning"].append(med_data)
+                response["Night"].append(med_data)
+
+            elif med.how_many_time == 3:
+                response["Morning"].append(med_data)
+                response["Afternoon"].append(med_data)
+                response["Night"].append(med_data)
+
+            elif med.how_many_time >= 4:
+                response["Morning"].append(med_data)
+                response["Afternoon"].append(med_data)
+                response["Evening"].append(med_data)
+                response["Night"].append(med_data)
+
+        prescriptions = Prescription.objects.filter(
+            users=request.user,
+            next_appointment_date=selected_date
+        ).select_related("doctor")
+
+        for p in prescriptions:
+            response["next_appointment"].append({
+                "doctor_name": p.doctor.name if p.doctor else None,
+                "appointment_date": p.next_appointment_date
+                # appointment_time does NOT exist
+            })
+
+        return Response(response)

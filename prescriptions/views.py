@@ -1,12 +1,10 @@
 import json
-
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
-
 from .models import Prescription, Patient, Medicine, MedicalTest
 from .serializers import PrescriptionSerializer
 from users.models import Users
@@ -81,7 +79,7 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
         """
         Get all prescriptions for the current authenticated user
         """
-        prescriptions = Prescription.objects.filter(users=request.user).select_related('users', 'doctor', 'patient').prefetch_related('medicine_set', 'medicaltest_set')
+        prescriptions = Prescription.objects.filter(users=request.user).select_related('users', 'doctor', 'patient').prefetch_related('medicine_set''medicaltest_set')
         serializer = self.get_serializer(prescriptions, many=True)
         return Response(serializer.data)
     

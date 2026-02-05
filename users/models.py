@@ -34,13 +34,8 @@ class CustomUserManager(BaseUserManager):
 
 # Custom User Model
 class Users(AbstractBaseUser, PermissionsMixin):
-    ROLE_CHOICES = (
-        ('admin', 'Admin'),
-        ('user', 'User'),
-    )
     full_name = models.CharField(max_length=100)
     email = models.EmailField(max_length=254, unique=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES,default='user')
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -80,3 +75,40 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Profile of {self.user.email}"
+
+
+
+
+
+
+
+"""
+GET dashboard/<parameter: date>/ - Retrieve dashboard data for a specific date.
+
+Morning = [
+    {medicine_name: ""},
+    {medicine_name: ""},
+    ....
+]
+Afternoon = [
+    {medicine_name: ""},
+    {medicine_name: ""},
+    ....
+]
+Evening = [
+    {medicine_name: ""},
+    {medicine_name: ""},
+    ....
+]
+night = [
+    {medicine_name: ""},
+    {medicine_name: ""},
+    ....
+]
+next_appointment: [
+    {doctor_name: "", appointment_date: "", appointment_time: ""},
+    {doctor_name: "", appointment_date: "", appointment_time: ""},
+    ....
+]
+
+"""

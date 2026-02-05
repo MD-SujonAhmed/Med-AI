@@ -14,7 +14,7 @@ class PatientSerializer(serializers.ModelSerializer):
 class MedicineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medicine
-        fields = ['name', 'how_many_time', 'how_many_day', 'stock']
+        fields = ['name', 'how_many_time', 'how_many_day','created_at','updated_at' ,'before_meal', 'after_meal','stock']
 
 
 class MedicalTestSerializer(serializers.ModelSerializer):

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 # Create your models here.
 
@@ -35,6 +36,8 @@ class Medicine(models.Model):
     stock=models.IntegerField(default=0)
     before_meal=models.BooleanField(default=False)
     after_meal=models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     
     def __str__(self):
@@ -61,4 +64,3 @@ class pharmacy(models.Model):
     
     def __str__(self):
         return self.pharmacy_nam
-    

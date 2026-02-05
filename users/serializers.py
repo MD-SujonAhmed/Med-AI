@@ -144,3 +144,24 @@ class AdminChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user
+
+
+#  ------- Dashboard Serializer -------
+
+class MedicineSlotSerializer(serializers.Serializer):
+    medicine_name = serializers.CharField()
+    before_meal = serializers.BooleanField()
+    after_meal = serializers.BooleanField()
+
+
+class AppointmentSerializer(serializers.Serializer):
+    doctor_name = serializers.CharField(allow_null=True)
+    appointment_date = serializers.DateField()
+
+
+class DashboardSerializer(serializers.Serializer):
+    Morning = MedicineSlotSerializer(many=True)
+    Afternoon = MedicineSlotSerializer(many=True)
+    Evening = MedicineSlotSerializer(many=True)
+    Night = MedicineSlotSerializer(many=True)
+    next_appointment = AppointmentSerializer(many=True)

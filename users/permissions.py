@@ -1,12 +1,10 @@
 from rest_framework.permissions import BasePermission
 
-class IsAdminRole(BasePermission):
-    """
-    Allow access only to users with role = admin
-    """
+class IsAdminOrSuperUser(BasePermission):
     def has_permission(self, request, view):
+        user = request.user
         return (
-            request.user and
-            request.user.is_authenticated and
-            request.user.role == 'admin'
+            user and
+            user.is_authenticated and
+            (user.is_superuser)
         )

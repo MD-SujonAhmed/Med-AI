@@ -19,3 +19,11 @@ Superuser created successfully.
 
 git pull   # কাজ শুরুর আগে
 git push   # কাজ শেষ করে
+
+
+
+$ python manage.py createsuperuser
+Email: user@gamil.com
+Full name: user
+Password: 1234
+Password (again):1234
