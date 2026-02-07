@@ -33,7 +33,7 @@ class PatientAdmin(admin.ModelAdmin):
 
 @admin.register(Medicine)
 class MedicineAdmin(admin.ModelAdmin):
-    list_display = ('name', 'prescription', 'how_many_time', 'how_many_day', 'stock')
+    list_display = ('name', 'prescription', 'how_many_day', 'stock')
     search_fields = ('name',)
     list_filter = ('prescription',)
 

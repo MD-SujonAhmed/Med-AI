@@ -38,10 +38,10 @@ class Medicine(models.Model):
     prescription=models.ForeignKey(Prescription, on_delete=models.CASCADE)
     name=models.CharField(max_length=100)
     
-    morning=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True)
-    afternoon=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True)
-    evening=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True)
-    night=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True)
+    morning=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True,related_name='morning_time')
+    afternoon=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True,related_name='afternoon_time')
+    evening=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True,related_name='evening_time')
+    night=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True,related_name='night_time')
     
     how_many_day=models.IntegerField()
     stock=models.IntegerField(default=0)
