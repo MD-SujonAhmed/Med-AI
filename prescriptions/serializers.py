@@ -7,18 +7,18 @@ from doctors.models import Doctor
 
 class PatientSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Patient
+         model = Patient
         fields = ['name', 'age', 'sex', 'health_issues']
 
 
 class MedicineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medicine
-        fields = ['name', 'how_many_time', 'how_many_day','created_at','updated_at' ,'before_meal', 'after_meal','stock']
+       fields = ['name', 'how_many_time', 'how_many_day','created_at','updated_at' ,'before_meal', 'after_meal','stock']
 
 
-class MedicalTestSerializer(serializers.ModelSerializer):
-    class Meta:
+ class MedicalTestSerializer(serializers.ModelSerializer):
+     class Meta:
         model = MedicalTest
         fields = ['test_name']
 
@@ -32,7 +32,7 @@ class PrescriptionSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='users.full_name', read_only=True)
     doctor_name = serializers.CharField(source='doctor.name', read_only=True)
     
-    class Meta:
+ class Meta:
         model = Prescription
         fields = [
             'id',
@@ -52,6 +52,13 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         }
     
     def create(self, validated_data):
+        """
+        Create a new prescription with nested data:
+        - patient (JSON): name, age, sex, health_issues
+        - medicines (JSON): name, how_many_time, how_many_day
+        - medical_tests (JSON): test_name
+        Returns the created prescription object
+        """
         request = self.context.get("request")
 
         patient_raw = validated_data.pop("patient")

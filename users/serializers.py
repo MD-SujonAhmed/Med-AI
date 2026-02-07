@@ -103,8 +103,6 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.save()
         return user
     
-
-
 class DeactivateAccountSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, required=True)
     
@@ -116,7 +114,6 @@ class DeactivateAccountSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Password is incorrect.")
         return value
-    
     
 
 class AdminProfileSerializer(serializers.ModelSerializer):

@@ -28,20 +28,29 @@ class Patient(models.Model):
     def __str__(self):
         return self.name
     
+
+class Medicine_Time(models.Model):
+    time=models.TimeField()
+    before_meal=models.BooleanField(default=False)
+    after_meal=models.BooleanField(default=False)
+    
 class Medicine(models.Model):
     prescription=models.ForeignKey(Prescription, on_delete=models.CASCADE)
     name=models.CharField(max_length=100)
-    how_many_time=models.IntegerField()
+    
+    morning=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True)
+    afternoon=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True)
+    evening=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True)
+    night=models.OneToOneField(Medicine_Time, on_delete=models.CASCADE, null=True, blank=True)
+    
     how_many_day=models.IntegerField()
     stock=models.IntegerField(default=0)
-    before_meal=models.BooleanField(default=False)
-    after_meal=models.BooleanField(default=False)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    
     def __str__(self):
-        return f"{self.name} - {self.prescription.id}"    
+        return f"{self.name} - {self.prescription.id}" 
 
 
 

@@ -6,7 +6,6 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from prescriptions.models import Medicine, Prescription
-
 from .serializers import (
     ChangePasswordSerializer,
     DeactivateAccountSerializer,
@@ -45,7 +44,6 @@ class SignUpView(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # -----------------------------
 #  OTP Management
@@ -96,7 +94,6 @@ class VerifyOTPView(APIView):
         elif purpose == "password_reset":
             return Response({"message": "OTP verified. You can now reset your password.", "email": email}, status=status.HTTP_200_OK)
 
-
 class ResendOTPView(APIView):
     """Resend OTP for signup verification"""
     def post(self, request):
@@ -116,7 +113,6 @@ class ResendOTPView(APIView):
         store_otp(email, otp, purpose="signup")
         send_otp_email(email, otp, "signup")
         return Response({"message": "OTP resent successfully"}, status=status.HTTP_200_OK)
-
 
 # -----------------------------
 #  Password Reset
@@ -147,7 +143,6 @@ class ResetPasswordView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 # -----------------------------
 #  User Login
 # -----------------------------
@@ -176,7 +171,6 @@ class LoginView(APIView):
             {"message": "Login successful", "id": user.id, "refresh": str(refresh), "access": str(refresh.access_token)},
             status=status.HTTP_200_OK,
         )
-
 
 # -----------------------------
 #  User Profile
@@ -210,8 +204,6 @@ class MyProfileView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-
-
 # -----------------------------
 #  Change Password (Logged-in User)
 # -----------------------------
@@ -235,8 +227,6 @@ class ChangePasswordView(APIView):
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
 
 # -----------------------------
 #  Deactivate Account
@@ -274,8 +264,6 @@ class AdminProfileView(APIView):
         serializer = AdminProfileSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
     
 class AdminUpdatePasswordView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
@@ -295,8 +283,7 @@ class AdminUpdatePasswordView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ----------------------------- Dashboard View
+# ----------------------------- Dashboard View -----------------------------
 
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
