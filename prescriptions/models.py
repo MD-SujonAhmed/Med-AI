@@ -24,13 +24,12 @@ class Patient(models.Model):
     age=models.IntegerField()
     sex=models.CharField(max_length=10)
     health_issues=models.TextField()
-    
-    def __str__(self):
-        return self.name
+
+
     
 
 class Medicine_Time(models.Model):
-    time=models.TimeField()
+    time=models.TimeField(default=timezone.now)
     before_meal=models.BooleanField(default=False)
     after_meal=models.BooleanField(default=False)
     

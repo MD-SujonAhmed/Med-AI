@@ -299,7 +299,27 @@ class DashboardView(APIView):
             "next_appointment": []
         }
 
-        medicines = Medicine.objects.select_related("prescription", "prescription__doctor")
+        # ✅ only current user's medicines + load time slots
+        medicines = (
+            Medicine.objects
+            .filter(prescription__users=request.user)
+            .select_related(
+                "prescription",
+                "prescription__doctor",
+                "morning",
+                "afternoon",
+                "evening",
+                "night",
+            )
+        )
+
+        def slot_payload(med, slot_obj):
+            return {
+                "medicine_name": med.name,
+                "time": str(slot_obj.time) if slot_obj and slot_obj.time else None,
+                "before_meal": bool(slot_obj.before_meal) if slot_obj else False,
+                "after_meal": bool(slot_obj.after_meal) if slot_obj else False,
+            }
 
         for med in medicines:
             start_date = med.prescription.created_at.date()
@@ -308,40 +328,29 @@ class DashboardView(APIView):
             if not (start_date <= selected_date <= end_date):
                 continue
 
-            med_data = {
-                "medicine_name": med.name,
-                "before_meal": med.before_meal,
-                "after_meal": med.after_meal
-            }
+            # ✅ new logic: whichever slot exists, put it there
+            if med.morning:
+                response["Morning"].append(slot_payload(med, med.morning))
 
-            if med.how_many_time == 1:
-                response["Morning"].append(med_data)
+            if med.afternoon:
+                response["Afternoon"].append(slot_payload(med, med.afternoon))
 
-            elif med.how_many_time == 2:
-                response["Morning"].append(med_data)
-                response["Night"].append(med_data)
+            if med.evening:
+                response["Evening"].append(slot_payload(med, med.evening))
 
-            elif med.how_many_time == 3:
-                response["Morning"].append(med_data)
-                response["Afternoon"].append(med_data)
-                response["Night"].append(med_data)
+            if med.night:
+                response["Night"].append(slot_payload(med, med.night))
 
-            elif med.how_many_time >= 4:
-                response["Morning"].append(med_data)
-                response["Afternoon"].append(med_data)
-                response["Evening"].append(med_data)
-                response["Night"].append(med_data)
-
-        prescriptions = Prescription.objects.filter(
-            users=request.user,
-            next_appointment_date=selected_date
-        ).select_related("doctor")
+        prescriptions = (
+            Prescription.objects
+            .filter(users=request.user, next_appointment_date=selected_date)
+            .select_related("doctor")
+        )
 
         for p in prescriptions:
             response["next_appointment"].append({
                 "doctor_name": p.doctor.name if p.doctor else None,
                 "appointment_date": p.next_appointment_date
-                # appointment_time does NOT exist
             })
 
         return Response(response)
