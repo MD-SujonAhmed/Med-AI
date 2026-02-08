@@ -11,6 +11,9 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
     serializer_class = PrescriptionSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+    
+    
+    
 
     def get_queryset(self):
         user = self.request.user
@@ -18,35 +21,40 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
             .select_related('doctor', 'patient') \
             .prefetch_related('medicine_set', 'medicaltest_set')
 
-    def perform_create(self, serializer):
-        data = self.request.data
+def perform_create(self, serializer):
+    data = self.request.data
 
-        # 1. Create or get patient
-        patient_data = data.get("patient")
-        patient_obj, _ = Patient.objects.get_or_create(**patient_data)
+    # ✅ 1. Save prescription first (patient ছাড়াই)
+    prescription = serializer.save(users=self.request.user)
 
-        # 2. Save prescription
-        prescription = serializer.save(users=self.request.user, patient=patient_obj)
+    # ✅ 2. Create patient with prescription link
+    patient_data = data.get("patient")
+    patient_obj = Patient.objects.create(
+        prescription=prescription,
+        name=patient_data['name'],
+        age=patient_data['age'],
+        sex=patient_data.get('sex', ''),
+        health_issues=patient_data.get('health_issues', '')
+    )
 
-        # 3. Save medicines
-        medicines = data.get("medicines", [])
-        for med in medicines:
-            times = {}
-            for t in ["morning", "afternoon", "evening", "night"]:
-                time_data = med.pop(t, None)
-                if time_data:
-                    times[t] = Medicine_Time.objects.create(**time_data)
+    # 3. Save medicines
+    medicines = data.get("medicines", [])
+    for med in medicines:
+        times = {}
+        for t in ["morning", "afternoon", "evening", "night"]:
+            time_data = med.pop(t, None)
+            if time_data:
+                times[t] = Medicine_Time.objects.create(**time_data)
 
-            med_obj = Medicine.objects.create(prescription=prescription, **med)
-            for t, obj in times.items():
-                setattr(med_obj, t, obj)
-            med_obj.save()
+        med_obj = Medicine.objects.create(prescription=prescription, **med)
+        for t, obj in times.items():
+            setattr(med_obj, t, obj)
+        med_obj.save()
 
-        # 4. Save medical tests
-        tests = data.get("medical_tests", [])
-        for test in tests:
-            MedicalTest.objects.create(prescription=prescription, **test)
-
+    # 4. Save medical tests
+    tests = data.get("medical_tests", [])
+    for test in tests:
+        MedicalTest.objects.create(prescription=prescription, **test)
     def perform_update(self, serializer):
         data = self.request.data
         prescription = self.get_object()

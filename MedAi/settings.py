@@ -177,6 +177,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # physical folder in project direc
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1,),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),            
 }

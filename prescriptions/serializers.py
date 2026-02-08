@@ -9,10 +9,10 @@ class MedicineTimeSerializer(serializers.ModelSerializer):
 
 
 class MedicineSerializer(serializers.ModelSerializer):
-    morning = MedicineTimeSerializer(required=False)
-    afternoon = MedicineTimeSerializer(required=False)
-    evening = MedicineTimeSerializer(required=False)
-    night = MedicineTimeSerializer(required=False)
+    morning = MedicineTimeSerializer(required=False, read_only=True)
+    afternoon = MedicineTimeSerializer(required=False, read_only=True)
+    evening = MedicineTimeSerializer(required=False, read_only=True)
+    night = MedicineTimeSerializer(required=False, read_only=True)
 
     class Meta:
         model = Medicine
@@ -32,9 +32,10 @@ class MedicalTestSerializer(serializers.ModelSerializer):
 
 
 class PrescriptionSerializer(serializers.ModelSerializer):
-    patient = PatientSerializer()
-    medicines = MedicineSerializer(source='medicine_set', many=True)
-    medical_tests = MedicalTestSerializer(source='medicaltest_set', many=True, required=False)
+    # ✅ সব nested fields read_only করো
+    patient = PatientSerializer(read_only=True)
+    medicines = MedicineSerializer(source='medicine_set', many=True, read_only=True)
+    medical_tests = MedicalTestSerializer(source='medicaltest_set', many=True, required=False, read_only=True)
 
     user_name = serializers.CharField(source="users.full_name", read_only=True)
     doctor_name = serializers.CharField(source="doctor.name", read_only=True)
