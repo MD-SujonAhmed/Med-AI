@@ -30,7 +30,7 @@ class MedicalTestSerializer(serializers.ModelSerializer):
         model = MedicalTest
         fields = ["test_name"]
 
-
+# 01713884253 => Ammu 
 class PrescriptionSerializer(serializers.ModelSerializer):
     # ✅ সব nested fields read_only করো
     patient = PatientSerializer(read_only=True)

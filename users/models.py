@@ -80,8 +80,6 @@ class UserProfile(models.Model):
 
 
 
-
-
 """
 GET dashboard/<parameter: date>/ - Retrieve dashboard data for a specific date.
 

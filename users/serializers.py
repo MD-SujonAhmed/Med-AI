@@ -144,7 +144,6 @@ class AdminChangePasswordSerializer(serializers.Serializer):
 
 
 #  ------- Dashboard Serializer -------
-
 class MedicineSlotSerializer(serializers.Serializer):
     medicine_name = serializers.CharField()
     before_meal = serializers.BooleanField()
