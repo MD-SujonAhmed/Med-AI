@@ -34,7 +34,8 @@ THIRD_PARTY_APPS = [
     # Add third-party apps here
     'rest_framework',                                   # Django Rest Framework
     'drf_spectacular',                                  # DRF Documentation
-    'rest_framework_simplejwt.token_blacklist',         # For logout functionality                                     # For handling CORS
+    'rest_framework_simplejwt.token_blacklist',         # For logout functionality
+    'nested_admin',                                     # Nested Admin
 ]
 
 LOCAL_APPS = [

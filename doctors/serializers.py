@@ -5,7 +5,7 @@ from prescriptions.models import Prescription
 class DoctorNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoctorNote
-        fields = ['id', 'note']
+        fields = ['id', 'note', 'date']
 
 class DoctorSerializer(serializers.ModelSerializer):
     notes = DoctorNoteSerializer(many=True, read_only=True)

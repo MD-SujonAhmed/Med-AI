@@ -2,14 +2,14 @@ from django.db import models
 from django.utils import timezone
 
 # Create your models here.
-
 class Prescription(models.Model):
     users=models.ForeignKey('users.Users', on_delete=models.CASCADE)
     doctor=models.ForeignKey('doctors.Doctor', on_delete=models.CASCADE, default=None, null=True) # doctor foreign key 
-    prescription_image=models.ImageField(upload_to='prescriptions/')
+    prescription_image=models.ImageField(upload_to='prescriptions/',null=True, blank=True)
     next_appointment_date=models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
     
     class Meta:
         ordering = ['-created_at']
@@ -19,20 +19,22 @@ class Prescription(models.Model):
 
 
 class Patient(models.Model):
-    Prescription=models.OneToOneField(Prescription, on_delete=models.CASCADE, related_name='patient')
-    name=models.CharField(max_length=100)
-    age=models.IntegerField()
-    sex=models.CharField(max_length=10)
-    health_issues=models.TextField()
-
-
-    
+    prescription = models.OneToOneField(
+        Prescription,
+        on_delete=models.CASCADE,
+        related_name='patient'
+    )
+    name = models.CharField(max_length=100)
+    age = models.IntegerField()
+    sex = models.CharField(max_length=10)
+    health_issues = models.TextField()
 
 class Medicine_Time(models.Model):
-    time=models.TimeField(default=timezone.now)
+    time=models.TimeField()
     before_meal=models.BooleanField(default=False)
     after_meal=models.BooleanField(default=False)
-    
+
+
 class Medicine(models.Model):
     prescription=models.ForeignKey(Prescription, on_delete=models.CASCADE)
     name=models.CharField(max_length=100)
@@ -50,7 +52,6 @@ class Medicine(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.prescription.id}" 
-
 
 
 class MedicalTest(models.Model):

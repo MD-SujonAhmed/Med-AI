@@ -188,7 +188,7 @@ class MyProfileView(APIView):
         return profile
     def get(self, request):
         profile = self._get_profile(request.user)
-        serializer = UserProfileSerializer(profile)
+        serializer = UserProfileSerializer(profile, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request):

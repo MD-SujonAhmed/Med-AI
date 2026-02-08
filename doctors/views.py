@@ -7,6 +7,7 @@ from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
 # class DoctorViewSet(viewsets.ModelViewSet):
@@ -22,9 +23,20 @@ class DoctorViewSet(viewsets.ModelViewSet):
     - list: /doctors/profile/ → returns all doctors without notes (optional)
     - retrieve: /doctors/profile/{id}/ → returns doctor with notes and prescriptions
     """
-    queryset = Doctor.objects.all().prefetch_related('notes')
     serializer_class = DoctorSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        """
+        Returns only doctors created by the logged-in user.
+        """
+        user = self.request.user
+        return Doctor.objects.filter(user=user).prefetch_related('notes')
+    
+    def perform_create(self, serializer):
+        # Automatically assign the logged-in user as the owner of the doctor
+        serializer.save(user=self.request.user)
+    
     def list(self, request, *args, **kwargs):
         """
         List all doctors without including notes (optional for performance)

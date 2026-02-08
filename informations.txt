@@ -27,3 +27,37 @@ Email: user@gamil.com
 Full name: user
 Password: 1234
 Password (again):1234
+
+
+{
+  "name": "Ammu",
+  "age":35,
+  "sex":"female",
+  "health_issues":"Accusantium velit ve"
+}
+
+
+[
+  {
+    "name":"Napa",
+    "how_many_day":12,
+    "stock":20,
+    "morning": {
+      "time":"08:30:00",
+      "before_meal":true,
+      "after_meal":false
+    },
+    "afternoon": {
+      "time":"12:00:00",
+      "before_meal":false,
+      "after_meal":true
+      }
+  }
+]
+
+[
+  {
+    "test_name":"Blood Sugar Test"
+  }
+]
+
