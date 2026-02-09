@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Users, UserProfile
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+
 
 class SingUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -154,10 +156,34 @@ class AppointmentSerializer(serializers.Serializer):
     doctor_name = serializers.CharField(allow_null=True)
     appointment_date = serializers.DateField()
 
-
 class DashboardSerializer(serializers.Serializer):
     Morning = MedicineSlotSerializer(many=True)
     Afternoon = MedicineSlotSerializer(many=True)
     Evening = MedicineSlotSerializer(many=True)
     Night = MedicineSlotSerializer(many=True)
     next_appointment = AppointmentSerializer(many=True)
+    
+
+
+# ------- Logout Serializer -------
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    def save(self):
+        try:
+            token = RefreshToken(self.validated_data["refresh"])
+            token.blacklist()
+        except TokenError:
+            raise serializers.ValidationError("Invalid or expired refresh token.")
+        
+
+# users/serializers.py
+
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+
+    def validate_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Password is incorrect.")
+        return value

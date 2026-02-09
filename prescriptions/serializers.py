@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Prescription, Patient, Medicine, Medicine_Time, MedicalTest
+from .models import Prescription, Patient, Medicine, Medicine_Time, MedicalTest, pharmacy
 
 
 class MedicineTimeSerializer(serializers.ModelSerializer):
@@ -30,7 +30,12 @@ class MedicalTestSerializer(serializers.ModelSerializer):
         model = MedicalTest
         fields = ["test_name"]
 
-# 01713884253 => Ammu 
+
+class PramcySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = pharmacy
+        fields = ["pharmacy_name", "Pharmacy_Address", "website_link"]
+
 class PrescriptionSerializer(serializers.ModelSerializer):
     # ✅ সব nested fields read_only করো
     patient = PatientSerializer(read_only=True)
@@ -53,4 +58,22 @@ class PrescriptionSerializer(serializers.ModelSerializer):
             "medical_tests",
             "user_name",
             "doctor_name"
+        ]
+        
+
+class UserMedicineSerializer(serializers.ModelSerializer):
+    prescription_id = serializers.IntegerField(source="prescription.id", read_only=True)
+    prescription_date = serializers.DateTimeField(source="prescription.created_at", read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = Medicine
+        fields = [
+            "id",
+            "name",
+            "how_many_day",
+            "stock",
+            "prescription_id",
+            "prescription_date",
+            "created_at"
         ]

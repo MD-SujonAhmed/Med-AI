@@ -14,7 +14,9 @@ from .serializers import (
     ResetPasswordSerializer,
     UserProfileSerializer,
     AdminProfileSerializer,
-    AdminChangePasswordSerializer
+    AdminChangePasswordSerializer,
+    LogoutSerializer,
+    DeleteAccountSerializer
 )
 from .models import Users, UserProfile
 from .utils.otp import generate_otp, store_otp, verify_otp, is_password_reset_verified
@@ -48,22 +50,22 @@ class SignUpView(APIView):
 # -----------------------------
 #  OTP Management
 # -----------------------------
-class RequestOTPView(APIView):
     """Request OTP for signup or password reset"""
-    def post(self, request):
-        email = request.data.get("email")
-        purpose = request.data.get("purpose")
-        if not email or not purpose:
-            return Response(
+class RequestOTPView(APIView):
+        def post(self, request):
+            email = request.data.get("email")
+            purpose = request.data.get("purpose")
+            if not email or not purpose:
+                return Response(
                 {"error": "Both email and purpose are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        otp = generate_otp()
-        store_otp(email, otp, purpose=purpose)
-        send_otp_email(email, otp, purpose)
-        return Response(
-            {"message": f"OTP sent to {email} for {purpose}."},
+            otp = generate_otp()
+            store_otp(email, otp, purpose=purpose)
+            send_otp_email(email, otp, purpose)
+            return Response(
+                    {"message": f"OTP sent to {email} for {purpose}."},
             status=status.HTTP_200_OK,
         )
 
@@ -93,26 +95,6 @@ class VerifyOTPView(APIView):
 
         elif purpose == "password_reset":
             return Response({"message": "OTP verified. You can now reset your password.", "email": email}, status=status.HTTP_200_OK)
-
-class ResendOTPView(APIView):
-    """Resend OTP for signup verification"""
-    def post(self, request):
-        email = request.data.get("email")
-        if not email:
-            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            user = Users.objects.get(email=email)
-        except Users.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        if user.is_active:
-            return Response({"error": "User already verified"}, status=status.HTTP_400_BAD_REQUEST)
-
-        otp = generate_otp()
-        store_otp(email, otp, purpose="signup")
-        send_otp_email(email, otp, "signup")
-        return Response({"message": "OTP resent successfully"}, status=status.HTTP_200_OK)
 
 # -----------------------------
 #  Password Reset
@@ -256,7 +238,6 @@ class DeactivateAccountView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-
 class AdminProfileView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
@@ -354,3 +335,38 @@ class DashboardView(APIView):
             })
 
         return Response(response)
+    
+    
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {"message": "Logout successful."},
+            status=status.HTTP_200_OK
+        )
+
+
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = DeleteAccountSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        user.delete()
+
+        return Response(
+            {"message": "Account deleted permanently."},
+            status=status.HTTP_200_OK
+        )

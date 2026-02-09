@@ -2,8 +2,9 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
-from .models import Prescription, Patient, Medicine, Medicine_Time, MedicalTest
-from .serializers import PrescriptionSerializer
+from .models import Prescription, Patient, Medicine, Medicine_Time, MedicalTest, pharmacy
+from .serializers import PramcySerializer, PrescriptionSerializer, UserMedicineSerializer
+from rest_framework.views import APIView
 
 
 class PrescriptionViewSet(viewsets.ModelViewSet):
@@ -89,3 +90,28 @@ def perform_create(self, serializer):
         tests = data.get("medical_tests", [])
         for test in tests:
             MedicalTest.objects.create(prescription=prescription, **test)
+
+
+
+
+class UserAllMedicineViewSet(viewsets.ModelViewSet):
+    serializer_class = UserMedicineSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "put", "patch"]
+
+    def get_queryset(self):
+        return Medicine.objects.filter(
+            prescription__users=self.request.user
+        ).select_related("prescription")
+
+
+class ParmacyViewSet(viewsets.ModelViewSet):
+    queryset = pharmacy.objects.all()
+    serializer_class = PramcySerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # automatically set the logged-in user
+        serializer.save(user=self.request.user)
+    
+    
