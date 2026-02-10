@@ -1,28 +1,26 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.response import Response
+from django.db import transaction
 from .models import Prescription, Patient, Medicine, Medicine_Time, MedicalTest, pharmacy
-from .serializers import PramcySerializer, PrescriptionSerializer, UserMedicineSerializer
-from rest_framework.views import APIView
-
+from .serializers import PrescriptionSerializer, PramcySerializer, UserMedicineSerializer
+from users.permissions import IsNormalUser, IsAdminOrSuperUser
 
 class PrescriptionViewSet(viewsets.ModelViewSet):
     queryset = Prescription.objects.all()
     serializer_class = PrescriptionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsNormalUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
-        user = self.request.user
-        return Prescription.objects.filter(users=user)
+        return Prescription.objects.filter(users=self.request.user)
 
-    # ✅ CORRECTION 1: perform_create class-এর ভিতরে
+    @transaction.atomic
     def perform_create(self, serializer):
         data = self.request.data
         prescription = serializer.save(users=self.request.user)
 
-        # patient
+        # Patient
         patient_data = data.get("patient")
         if patient_data:
             Patient.objects.create(
@@ -33,7 +31,7 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
                 health_issues=patient_data.get("health_issues", "")
             )
 
-        # medicines
+        # Medicines
         medicines = data.get("medicines", [])
         for med in medicines:
             times = {}
@@ -41,38 +39,61 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
                 time_data = med.pop(t, None)
                 if time_data:
                     times[t] = Medicine_Time.objects.create(**time_data)
-
-            med_obj = Medicine.objects.create(
-                prescription=prescription, **med
-            )
+            med_obj = Medicine.objects.create(prescription=prescription, **med)
             for t, obj in times.items():
                 setattr(med_obj, t, obj)
             med_obj.save()
 
-        # medical tests
+        # Medical Tests
         tests = data.get("medical_tests", [])
         for test in tests:
-            MedicalTest.objects.create(
-                prescription=prescription, **test
-            )
+            MedicalTest.objects.create(prescription=prescription, **test)
 
-    # ✅ CORRECTION 2: perform_update আলাদা method
+    @transaction.atomic
     def perform_update(self, serializer):
         data = self.request.data
         prescription = serializer.save()
 
+        # Patient update
         patient_data = data.get("patient")
-        if patient_data and hasattr(prescription, "patient"):
-            for attr, value in patient_data.items():
-                setattr(prescription.patient, attr, value)
-            prescription.patient.save()
+        if patient_data:
+            Patient.objects.update_or_create(
+                prescription=prescription,
+                defaults=patient_data
+            )
 
+        # Medicines update
+        medicines_data = data.get("medicines", [])
+        # Delete old medicines and times
+        for med in prescription.medicine_set.all():
+            for t in ["morning", "afternoon", "evening", "night"]:
+                time_obj = getattr(med, t, None)
+                if time_obj is not None:
+                    time_obj.delete()
+            med.delete()
 
+        # Create new medicines
+        for med in medicines_data:
+            times = {}
+            for t in ["morning", "afternoon", "evening", "night"]:
+                time_data = med.pop(t, None)
+                if time_data:
+                    times[t] = Medicine_Time.objects.create(**time_data)
+            med_obj = Medicine.objects.create(prescription=prescription, **med)
+            for t, obj in times.items():
+                setattr(med_obj, t, obj)
+            med_obj.save()
+
+        # Medical Tests update
+        tests_data = data.get("medical_tests", [])
+        prescription.medicaltest_set.all().delete()
+        for test in tests_data:
+            MedicalTest.objects.create(prescription=prescription, **test)
 
 
 class UserAllMedicineViewSet(viewsets.ModelViewSet):
     serializer_class = UserMedicineSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsNormalUser]
     http_method_names = ["get", "put", "patch"]
 
     def get_queryset(self):
@@ -84,10 +105,7 @@ class UserAllMedicineViewSet(viewsets.ModelViewSet):
 class ParmacyViewSet(viewsets.ModelViewSet):
     queryset = pharmacy.objects.all()
     serializer_class = PramcySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsNormalUser]
 
     def perform_create(self, serializer):
-        # automatically set the logged-in user
         serializer.save(user=self.request.user)
-    
-    

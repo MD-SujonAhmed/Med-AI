@@ -1,79 +1,89 @@
 from rest_framework import serializers
 from .models import Prescription, Patient, Medicine, Medicine_Time, MedicalTest, pharmacy
 
-
 class MedicineTimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medicine_Time
         fields = ["time", "before_meal", "after_meal"]
 
-
 class MedicineSerializer(serializers.ModelSerializer):
-    morning = MedicineTimeSerializer(required=False, read_only=True)
-    afternoon = MedicineTimeSerializer(required=False, read_only=True)
-    evening = MedicineTimeSerializer(required=False, read_only=True)
-    night = MedicineTimeSerializer(required=False, read_only=True)
+    morning = MedicineTimeSerializer(required=False, allow_null=True)
+    afternoon = MedicineTimeSerializer(required=False, allow_null=True)
+    evening = MedicineTimeSerializer(required=False, allow_null=True)
+    night = MedicineTimeSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Medicine
-        fields = ["name", "how_many_day", "stock", "morning", "afternoon", "evening", "night"]
-
+        fields = ["id", "name", "how_many_day", "stock", "morning", "afternoon", "evening", "night"]
 
 class PatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
-        fields = ["name", "age", "sex", "health_issues"]
-
+        fields = ["id", "name", "age", "sex", "health_issues"]
 
 class MedicalTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedicalTest
-        fields = ["test_name"]
-
-
-class PramcySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = pharmacy
-        fields = ["pharmacy_name", "Pharmacy_Address", "website_link"]
+        fields = ["id", "test_name"]
 
 class PrescriptionSerializer(serializers.ModelSerializer):
-    # ✅ সব nested fields read_only করো
-    patient = PatientSerializer(read_only=True)
-    medicines = MedicineSerializer(source='medicine_set', many=True, read_only=True)
-    medical_tests = MedicalTestSerializer(source='medicaltest_set', many=True, required=False, read_only=True)
-
-    user_name = serializers.CharField(source="users.full_name", read_only=True)
-    doctor_name = serializers.CharField(source="doctor.name", read_only=True)
+    patient = PatientSerializer()
+    medicines = MedicineSerializer(source="medicine_set", many=True)
+    medical_tests = MedicalTestSerializer(source="medicaltest_set", many=True, required=False)
 
     class Meta:
         model = Prescription
         fields = [
-            "id",
-            "users",
-            "doctor",
-            "prescription_image",
-            "next_appointment_date",
-            "patient",
-            "medicines",
-            "medical_tests",
-            "user_name",
-            "doctor_name"
+            "id", "users", "doctor", "prescription_image", "next_appointment_date",
+            "patient", "medicines", "medical_tests"
         ]
+
+    def update(self, instance, validated_data):
+        # Prescription main fields
+        instance.doctor = validated_data.get('doctor', instance.doctor)
+        instance.next_appointment_date = validated_data.get('next_appointment_date', instance.next_appointment_date)
+        instance.save()
+
+        # Patient update
+        patient_data = validated_data.get('patient')
+        if patient_data:
+            Patient.objects.update_or_create(prescription=instance, defaults=patient_data)
+
+        # Medicines update
+        medicines_data = validated_data.get('medicine_set', [])
+        for med in instance.medicine_set.all():
+            for t in ["morning", "afternoon", "evening", "night"]:
+                time_obj = getattr(med, t, None)
+                if time_obj:
+                    time_obj.delete()
+            med.delete()
+
+        for med in medicines_data:
+            times = {}
+            for t in ["morning", "afternoon", "evening", "night"]:
+                time_data = med.pop(t, None)
+                if time_data:
+                    times[t] = Medicine_Time.objects.create(**time_data)
+            med_obj = Medicine.objects.create(prescription=instance, **med)
+            for t, obj in times.items():
+                setattr(med_obj, t, obj)
+            med_obj.save()
+
+        # Medical tests update
+        tests_data = validated_data.get('medicaltest_set', [])
+        instance.medicaltest_set.all().delete()
+        for test in tests_data:
+            MedicalTest.objects.create(prescription=instance, **test)
+
+        return instance
+
+class PramcySerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = pharmacy
+        fields = [ 'pharmacy_name', 'Pharmacy_Address', 'website_link']
         
-
 class UserMedicineSerializer(serializers.ModelSerializer):
-    prescription_id = serializers.IntegerField(source="prescription.id", read_only=True)
-    prescription_date = serializers.DateTimeField(source="prescription.created_at", read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-
     class Meta:
         model = Medicine
-        fields = [
-            "id",
-            "name",
-            "how_many_day",
-            "stock",
-            "prescription_id",
-            "prescription_date",
-            "created_at"
-        ]
+        fields = ['id', 'name', 'how_many_day', 'stock','prescription_id']

@@ -13,7 +13,7 @@ urlpatterns = [
     path("users/", include("users.urls")),
     # path("test/", include("Test.urls")),
     path("doctors/", include("doctors.urls")),
-    path("prescriptions/", include("prescriptions.urls")),
+    path("api/", include("prescriptions.urls")),
     
     
     # Documentation URLs

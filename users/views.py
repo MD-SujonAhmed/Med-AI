@@ -21,7 +21,8 @@ from .serializers import (
 from .models import Users, UserProfile
 from .utils.otp import generate_otp, store_otp, verify_otp, is_password_reset_verified
 from .utils.email import send_otp_email
-from .permissions import IsAdminOrSuperUser
+from .permissions import IsAdminOrSuperUser,IsNormalUser
+
 
 
 # -----------------------------
@@ -161,7 +162,7 @@ class MyProfileView(APIView):
     """
     Retrieve or update logged-in user's profile
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsNormalUser]
 
     def _get_profile(self, user):
         profile, created = UserProfile.objects.get_or_create(
@@ -196,7 +197,7 @@ class ChangePasswordView(APIView):
     - Validates current password
     - Matches new password with confirm password
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsNormalUser]
 
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
@@ -220,7 +221,7 @@ class DeactivateAccountView(APIView):
     - Ac   User এর account deactivate করবে
     - Account deactivate হবে (is_active = False)
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsNormalUser]
 
     def post(self, request):
         serializer = DeactivateAccountSerializer(data=request.data, context={'request': request})
@@ -237,15 +238,14 @@ class DeactivateAccountView(APIView):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 class AdminProfileView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
     def get(self, request):
         serializer = AdminProfileSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    
+  
 class AdminUpdatePasswordView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
@@ -264,10 +264,10 @@ class AdminUpdatePasswordView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# ----------------------------- Dashboard View -----------------------------
+# ----------------------------- User Dashboard View -----------------------------
 
 class DashboardView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsNormalUser]
 
     def get(self, request, date):
         selected_date = parse_date(date)
@@ -336,8 +336,6 @@ class DashboardView(APIView):
 
         return Response(response)
     
-    
-
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]

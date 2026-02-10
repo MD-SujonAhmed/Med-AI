@@ -68,8 +68,6 @@ class pharmacy(models.Model):
     Pharmacy_Address=models.CharField(max_length=100) #Address
     website_link=models.URLField()
     
-    class Meta:
-        verbose_name_plural = 'Pharmacies'
     
     def __str__(self):
         return self.pharmacy_nam

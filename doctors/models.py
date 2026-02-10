@@ -10,8 +10,7 @@ class Doctor(models.Model):
     ]        
     name=models.CharField(max_length=100)
     user=models.ForeignKey('users.Users', on_delete=models.CASCADE, related_name='doctor')
-    sex=models.CharField(max_length=100, choices=sex_choices)
-    
+    sex=models.CharField(max_length=100, choices=sex_choices)    
     specialization=models.CharField(max_length=100)
     hospital_name=models.CharField(max_length=100)
     designation=models.CharField(max_length=100)

@@ -1,13 +1,11 @@
 from django.shortcuts import render
-
 from doctors.models import Doctor, DoctorNote
 from rest_framework.response import Response
 from .serializers import DoctorNoteSerializer, DoctorSerializer
 from rest_framework import viewsets
-from rest_framework.views import APIView
-from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from users.permissions import IsNormalUser, IsAdminOrSuperUser
 # Create your views here.
 
 # class DoctorViewSet(viewsets.ModelViewSet):
@@ -18,13 +16,8 @@ from rest_framework.permissions import IsAuthenticated
 
 
 class DoctorViewSet(viewsets.ModelViewSet):
-    """
-    Handles both listing all doctors and retrieving doctor details.
-    - list: /doctors/profile/ → returns all doctors without notes (optional)
-    - retrieve: /doctors/profile/{id}/ → returns doctor with notes and prescriptions
-    """
     serializer_class = DoctorSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsNormalUser]
 
     def get_queryset(self):
         """
@@ -79,16 +72,9 @@ class DoctorViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=400)
 
 
-class DoctorNotesByDoctor(APIView):
-    def get(self, request, doctor_id):
-        notes = DoctorNote.objects.filter(doctor_id=doctor_id)
-        serializer = DoctorNoteSerializer(notes, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, doctor_id):
-        serializer = DoctorNoteSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(doctor_id=doctor_id)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class DoctorNoteViewSet(viewsets.ModelViewSet):
+    queryset = DoctorNote.objects.all()
+    serializer_class = DoctorNoteSerializer
+    permission_classes = [IsAuthenticated, IsNormalUser]  
+    
     
