@@ -368,3 +368,46 @@ class DeleteAccountView(APIView):
             {"message": "Account deleted permanently."},
             status=status.HTTP_200_OK
         )
+
+
+# ----------------------------- Admin Views -----------------------------
+
+
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+
+class AdminUpdatePasswordView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+
+    def put(self, request):
+        serializer = AdminChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {"message": "Password updated successfully"},
+            status=status.HTTP_200_OK
+        )
+
+class AdminProfileView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+
+    def get(self, request):
+        serializer = AdminProfileSerializer(
+            request.user,
+            context={"request": request}
+        )
+        return Response(serializer.data, status=200)
+
+    def put(self, request):
+        serializer = AdminProfileSerializer(
+            request.user,
+            data=request.data,
+            context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=200)

@@ -118,31 +118,6 @@ class DeactivateAccountSerializer(serializers.Serializer):
         return value
     
 
-class AdminProfileSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(read_only=True)
-    full_name = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = Users
-        fields = ['full_name', 'email']
-        
-
-class AdminChangePasswordSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True, min_length=8)
-    confirm_password = serializers.CharField(write_only=True, min_length=8)
-
-    def validate(self, data):
-        if data['new_password'] != data['confirm_password']:
-            raise serializers.ValidationError(
-                "New password and confirm password do not match."
-            )
-        return data
-
-    def save(self):
-        user = self.context['request'].user
-        user.set_password(self.validated_data['new_password'])
-        user.save()
-        return user
 
 
 #  ------- Dashboard Serializer -------
@@ -187,3 +162,63 @@ class DeleteAccountSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Password is incorrect.")
         return value
+
+# ----------- Admin Dashboard Serializer -----------
+
+class AdminProfileSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(read_only=True)
+    full_name = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Users
+        fields = ['full_name', 'email']
+        
+
+class AdminChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError("Passwords do not match")
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context["request"].user
+
+        if not user.is_superuser:
+            raise serializers.ValidationError("Only admin can change admin password")
+
+        if not user.check_password(self.validated_data["old_password"]):
+            raise serializers.ValidationError("Old password is incorrect")
+
+        user.set_password(self.validated_data["new_password"])
+        user.save()
+
+
+
+class AdminProfileSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.ImageField(
+        source="profile.profile_picture",
+        required=False
+    )
+
+    class Meta:
+        model = Users
+        fields = ["id", "full_name", "email", "profile_picture"]
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop("profile", {})
+
+        instance.full_name = validated_data.get("full_name", instance.full_name)
+        instance.email = validated_data.get("email", instance.email)
+        instance.save()
+
+        profile, _ = UserProfile.objects.get_or_create(user=instance)
+
+        if "profile_picture" in profile_data:
+            profile.profile_picture = profile_data["profile_picture"]
+            profile.save()
+
+        return instance

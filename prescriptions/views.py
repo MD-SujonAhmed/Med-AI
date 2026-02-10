@@ -94,7 +94,7 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
 class UserAllMedicineViewSet(viewsets.ModelViewSet):
     serializer_class = UserMedicineSerializer
     permission_classes = [IsAuthenticated, IsNormalUser]
-    http_method_names = ["get", "put", "patch"]
+    http_method_names = ["get", "put", "patch","delete"]
 
     def get_queryset(self):
         return Medicine.objects.filter(
