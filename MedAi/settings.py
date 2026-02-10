@@ -172,8 +172,11 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # )
 
 # Media files (user uploads)
-MEDIA_URL = '/media/'  # browser থেকে access path
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # physical folder in project directory
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT =   os.path.join(BASE_DIR, 'media')
 
 
 SIMPLE_JWT = {
