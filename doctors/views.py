@@ -5,15 +5,8 @@ from .serializers import DoctorNoteSerializer, DoctorSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from users.permissions import IsNormalUser, IsAdminOrSuperUser
+from users.permissions import IsNormalUser
 # Create your views here.
-
-# class DoctorViewSet(viewsets.ModelViewSet):
-#     queryset = Doctor.objects.all().prefetch_related('notes')
-#     serializer_class = DoctorSerializer
-#     # permission_classes = [permissions.IsAuthenticated]
-
-
 
 class DoctorViewSet(viewsets.ModelViewSet):
     serializer_class = DoctorSerializer
