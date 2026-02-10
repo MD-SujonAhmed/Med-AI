@@ -12,66 +12,28 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
     serializer_class = PrescriptionSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
-    
-    
-    
 
     def get_queryset(self):
         user = self.request.user
-        return Prescription.objects.filter(users=user) \
-            .select_related('doctor', 'patient') \
-            .prefetch_related('medicine_set', 'medicaltest_set')
+        return Prescription.objects.filter(users=user)
 
-def perform_create(self, serializer):
-    data = self.request.data
-
-    # ✅ 1. Save prescription first (patient ছাড়াই)
-    prescription = serializer.save(users=self.request.user)
-
-    # ✅ 2. Create patient with prescription link
-    patient_data = data.get("patient")
-    patient_obj = Patient.objects.create(
-        prescription=prescription,
-        name=patient_data['name'],
-        age=patient_data['age'],
-        sex=patient_data.get('sex', ''),
-        health_issues=patient_data.get('health_issues', '')
-    )
-
-    # 3. Save medicines
-    medicines = data.get("medicines", [])
-    for med in medicines:
-        times = {}
-        for t in ["morning", "afternoon", "evening", "night"]:
-            time_data = med.pop(t, None)
-            if time_data:
-                times[t] = Medicine_Time.objects.create(**time_data)
-
-        med_obj = Medicine.objects.create(prescription=prescription, **med)
-        for t, obj in times.items():
-            setattr(med_obj, t, obj)
-        med_obj.save()
-
-    # 4. Save medical tests
-    tests = data.get("medical_tests", [])
-    for test in tests:
-        MedicalTest.objects.create(prescription=prescription, **test)
-    def perform_update(self, serializer):
+    # ✅ CORRECTION 1: perform_create class-এর ভিতরে
+    def perform_create(self, serializer):
         data = self.request.data
-        prescription = self.get_object()
+        prescription = serializer.save(users=self.request.user)
 
-        # Update patient
+        # patient
         patient_data = data.get("patient")
         if patient_data:
-            for attr, value in patient_data.items():
-                setattr(prescription.patient, attr, value)
-            prescription.patient.save()
+            Patient.objects.create(
+                prescription=prescription,
+                name=patient_data["name"],
+                age=patient_data["age"],
+                sex=patient_data.get("sex", ""),
+                health_issues=patient_data.get("health_issues", "")
+            )
 
-        # Update prescription fields
-        serializer.save()
-
-        # Update medicines (delete old & create new)
-        prescription.medicine_set.all().delete()
+        # medicines
         medicines = data.get("medicines", [])
         for med in medicines:
             times = {}
@@ -80,16 +42,30 @@ def perform_create(self, serializer):
                 if time_data:
                     times[t] = Medicine_Time.objects.create(**time_data)
 
-            med_obj = Medicine.objects.create(prescription=prescription, **med)
+            med_obj = Medicine.objects.create(
+                prescription=prescription, **med
+            )
             for t, obj in times.items():
                 setattr(med_obj, t, obj)
             med_obj.save()
 
-        # Update medical tests (delete old & create new)
-        prescription.medicaltest_set.all().delete()
+        # medical tests
         tests = data.get("medical_tests", [])
         for test in tests:
-            MedicalTest.objects.create(prescription=prescription, **test)
+            MedicalTest.objects.create(
+                prescription=prescription, **test
+            )
+
+    # ✅ CORRECTION 2: perform_update আলাদা method
+    def perform_update(self, serializer):
+        data = self.request.data
+        prescription = serializer.save()
+
+        patient_data = data.get("patient")
+        if patient_data and hasattr(prescription, "patient"):
+            for attr, value in patient_data.items():
+                setattr(prescription.patient, attr, value)
+            prescription.patient.save()
 
 
 

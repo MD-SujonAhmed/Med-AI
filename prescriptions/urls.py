@@ -9,7 +9,4 @@ router.register(r'medicines', UserAllMedicineViewSet, basename='user_medicines')
 
 urlpatterns = [
     path('', include(router.urls)),
-    
-    
 ]
-
