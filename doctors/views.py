@@ -43,31 +43,34 @@ class DoctorViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['get', 'post'], url_path='notes')
-    def doctor_notes(self, request, pk=None):
-        """
-        Optional endpoint to manage notes for a doctor:
-        - GET: list notes
-        - POST: create note
-        """
-        doctor = self.get_object()
 
-        if request.method == 'GET':
-            notes = doctor.notes.all()
-            serializer = DoctorNoteSerializer(notes, many=True)
-            return Response(serializer.data)
-
-        elif request.method == 'POST':
-            serializer = DoctorNoteSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(doctor=doctor)
-                return Response(serializer.data, status=201)
-            return Response(serializer.errors, status=400)
-
-
+# doctors/views.py
 class DoctorNoteViewSet(viewsets.ModelViewSet):
-    queryset = DoctorNote.objects.all()
     serializer_class = DoctorNoteSerializer
-    permission_classes = [IsAuthenticated, IsNormalUser]  
+    permission_classes = [IsAuthenticated, IsNormalUser]
+
+    def get_queryset(self):
+        """
+        Only notes of doctors owned by logged-in user
+        """
+        return DoctorNote.objects.filter(
+            doctor__user=self.request.user
+        )
+
+    def perform_create(self, serializer):
+        """
+        Attach doctor safely from URL
+        """
+        doctor_id = self.kwargs.get("doctor_pk")
+        try:
+            doctor = Doctor.objects.get(
+                id=doctor_id,
+                user=self.request.user
+            )
+        except Doctor.DoesNotExist:
+            raise PermissionError("Doctor not found or access denied")
+
+        serializer.save(doctor=doctor)
+
     
     
