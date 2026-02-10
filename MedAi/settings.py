@@ -180,6 +180,6 @@ MEDIA_ROOT =   os.path.join(BASE_DIR, 'media')
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # Access token valid for 5 minutes
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),            
 }
