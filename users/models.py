@@ -31,7 +31,6 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, full_name, password, **extra_fields)
 
-
 # Custom User Model
 class Users(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=100)
@@ -42,6 +41,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     doctors=models.ForeignKey('doctors.Doctor',on_delete=models.CASCADE,null=True,blank=True)
     
     objects = CustomUserManager()  # connect custom manager
+    created_at = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['full_name']
@@ -50,7 +50,6 @@ class Users(AbstractBaseUser, PermissionsMixin):
         
         return self.full_name
     
-
 
 class UserProfile(models.Model):
     user = models.OneToOneField(

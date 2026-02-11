@@ -16,18 +16,24 @@ from .serializers import (
     AdminProfileSerializer,
     AdminChangePasswordSerializer,
     LogoutSerializer,
-    DeleteAccountSerializer
+    DeleteAccountSerializer,
+   AdminDashboardSerializer
 )
 from .models import Users, UserProfile
 from .utils.otp import generate_otp, store_otp, verify_otp, is_password_reset_verified
 from .utils.email import send_otp_email
 from .permissions import IsAdminOrSuperUser,IsNormalUser
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models.functions import TruncMonth
+from django.db.models import Count
 
 
 
 # -----------------------------
 #  User Registration / Signup
 # -----------------------------
+@method_decorator(csrf_exempt, name='dispatch')
 class SignUpView(APIView):
     """
     User Sign Up
@@ -239,32 +245,7 @@ class DeactivateAccountView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
-class AdminProfileView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
-    def get(self, request):
-        serializer = AdminProfileSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-  
-class AdminUpdatePasswordView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
-
-    def put(self, request):
-        serializer = AdminChangePasswordSerializer(
-            data=request.data,
-            context={'request': request}
-        )
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Password updated successfully"},
-                status=status.HTTP_200_OK
-            )
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# ----------------------------- User Dashboard View -----------------------------
 
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated,IsNormalUser]
@@ -375,6 +356,8 @@ class DeleteAccountView(APIView):
 
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
+# ----------------------------- Admin Dashboard View -----------------------------
+
 class AdminUpdatePasswordView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
@@ -411,3 +394,29 @@ class AdminProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=200)
+    
+
+
+class AdminDashboardStatsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+
+    def get(self, request):
+        total_users = Users.objects.count()
+
+        monthly_users_qs = (
+            Users.objects
+            .annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(count=Count('id'))
+            .order_by('month')
+        )
+        monthly_user_data = {d['month'].strftime("%b"): d['count'] for d in monthly_users_qs}
+
+
+        # Serializer দিয়ে validate এবং structure enforce করা
+        serializer = AdminDashboardSerializer(data={
+    "total_users": total_users,
+    "monthly_user_growth": monthly_user_data,
+})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)

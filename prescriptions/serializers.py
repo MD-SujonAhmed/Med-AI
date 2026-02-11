@@ -27,55 +27,124 @@ class MedicalTestSerializer(serializers.ModelSerializer):
         fields = ["id", "test_name"]
 
 class PrescriptionSerializer(serializers.ModelSerializer):
-    patient = PatientSerializer()
-    medicines = MedicineSerializer(source="medicine_set", many=True)
-    medical_tests = MedicalTestSerializer(source="medicaltest_set", many=True, required=False)
+    patient = PatientSerializer(required=False)
+    medicines = MedicineSerializer(
+        source="medicine_set",
+        many=True,
+        required=False
+    )
+    medical_tests = MedicalTestSerializer(
+        source="medicaltest_set",
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = Prescription
         fields = [
-            "id", "users", "doctor", "prescription_image", "next_appointment_date",
-            "patient", "medicines", "medical_tests"
+            "id",
+            "users",
+            "doctor",
+            "prescription_image",
+            "next_appointment_date",
+            "patient",
+            "medicines",
+            "medical_tests",
         ]
+        read_only_fields = ["users"]
 
+    # ✅ IMPORTANT: Explicit update method
     def update(self, instance, validated_data):
-        # Prescription main fields
-        instance.doctor = validated_data.get('doctor', instance.doctor)
-        instance.next_appointment_date = validated_data.get('next_appointment_date', instance.next_appointment_date)
+
+        # 🔥 REMOVE nested data FIRST
+        patient_data = validated_data.pop("patient", None)
+        medicines_data = validated_data.pop("medicine_set", [])
+        tests_data = validated_data.pop("medicaltest_set", [])
+
+        # Update main fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
         instance.save()
 
-        # Patient update
-        patient_data = validated_data.get('patient')
+        # Update patient
         if patient_data:
-            Patient.objects.update_or_create(prescription=instance, defaults=patient_data)
+            Patient.objects.update_or_create(
+                prescription=instance,
+                defaults=patient_data
+            )
 
-        # Medicines update
-        medicines_data = validated_data.get('medicine_set', [])
-        for med in instance.medicine_set.all():
-            for t in ["morning", "afternoon", "evening", "night"]:
-                time_obj = getattr(med, t, None)
-                if time_obj:
-                    time_obj.delete()
-            med.delete()
+        # Delete old medicines
+        instance.medicine_set.all().delete()
 
+        # Create medicines again
         for med in medicines_data:
             times = {}
+
             for t in ["morning", "afternoon", "evening", "night"]:
                 time_data = med.pop(t, None)
                 if time_data:
                     times[t] = Medicine_Time.objects.create(**time_data)
-            med_obj = Medicine.objects.create(prescription=instance, **med)
+
+            med_obj = Medicine.objects.create(
+                prescription=instance,
+                **med
+            )
+
             for t, obj in times.items():
                 setattr(med_obj, t, obj)
+
             med_obj.save()
 
-        # Medical tests update
-        tests_data = validated_data.get('medicaltest_set', [])
+        # Update tests
         instance.medicaltest_set.all().delete()
+
         for test in tests_data:
-            MedicalTest.objects.create(prescription=instance, **test)
+            MedicalTest.objects.create(
+                prescription=instance,
+                **test
+            )
 
         return instance
+
+    # def update(self, instance, validated_data):
+    #     # Prescription main fields
+    #     instance.doctor = validated_data.get('doctor', instance.doctor)
+    #     instance.next_appointment_date = validated_data.get('next_appointment_date', instance.next_appointment_date)
+    #     instance.save()
+
+    #     # Patient update
+    #     patient_data = validated_data.get('patient')
+    #     if patient_data:
+    #         Patient.objects.update_or_create(prescription=instance, defaults=patient_data)
+
+    #     # Medicines update
+    #     medicines_data = validated_data.get('medicine_set', [])
+    #     for med in instance.medicine_set.all():
+    #         for t in ["morning", "afternoon", "evening", "night"]:
+    #             time_obj = getattr(med, t, None)
+    #             if time_obj:
+    #                 time_obj.delete()
+    #         med.delete()
+
+    #     for med in medicines_data:
+    #         times = {}
+    #         for t in ["morning", "afternoon", "evening", "night"]:
+    #             time_data = med.pop(t, None)
+    #             if time_data:
+    #                 times[t] = Medicine_Time.objects.create(**time_data)
+    #         med_obj = Medicine.objects.create(prescription=instance, **med)
+    #         for t, obj in times.items():
+    #             setattr(med_obj, t, obj)
+    #         med_obj.save()
+
+    #     # Medical tests update
+    #     tests_data = validated_data.get('medicaltest_set', [])
+    #     instance.medicaltest_set.all().delete()
+    #     for test in tests_data:
+    #         MedicalTest.objects.create(prescription=instance, **test)
+
+    #     return instance
 
 class PramcySerializer(serializers.ModelSerializer):
     

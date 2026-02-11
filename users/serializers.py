@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import Users, UserProfile
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
-
 class SingUpSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     class Meta:
@@ -39,14 +38,12 @@ class ResetPasswordSerializer(serializers.Serializer):
         instance.set_password(validated_data['new_password'])
         instance.save()
         return instance
-    
-    
+        
 class OtpVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6)
     purpose = serializers.ChoiceField(choices=['signup', 'password_reset'])
     
-
 class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
     full_name = serializers.CharField(source='user.full_name', read_only=True)
@@ -65,7 +62,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'lunch_time',
             'dinner_time',
         ] # email should not be editable
-
 
 # ✅ Add this new serializer for Change Password
 class ChangePasswordSerializer(serializers.Serializer):
@@ -117,15 +113,11 @@ class DeactivateAccountSerializer(serializers.Serializer):
             raise serializers.ValidationError("Password is incorrect.")
         return value
     
-
-
-
 #  ------- Dashboard Serializer -------
 class MedicineSlotSerializer(serializers.Serializer):
     medicine_name = serializers.CharField()
     before_meal = serializers.BooleanField()
     after_meal = serializers.BooleanField()
-
 
 class AppointmentSerializer(serializers.Serializer):
     doctor_name = serializers.CharField(allow_null=True)
@@ -138,8 +130,6 @@ class DashboardSerializer(serializers.Serializer):
     Night = MedicineSlotSerializer(many=True)
     next_appointment = AppointmentSerializer(many=True)
     
-
-
 # ------- Logout Serializer -------
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
@@ -151,7 +141,6 @@ class LogoutSerializer(serializers.Serializer):
         except TokenError:
             raise serializers.ValidationError("Invalid or expired refresh token.")
         
-
 # users/serializers.py
 
 class DeleteAccountSerializer(serializers.Serializer):
@@ -164,39 +153,7 @@ class DeleteAccountSerializer(serializers.Serializer):
         return value
 
 # ----------- Admin Dashboard Serializer -----------
-
-class AdminProfileSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(read_only=True)
-    full_name = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = Users
-        fields = ['full_name', 'email']
-        
-
-class AdminChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True)
-    confirm_password = serializers.CharField(write_only=True)
-
-    def validate(self, attrs):
-        if attrs["new_password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError("Passwords do not match")
-        return attrs
-
-    def save(self, **kwargs):
-        user = self.context["request"].user
-
-        if not user.is_superuser:
-            raise serializers.ValidationError("Only admin can change admin password")
-
-        if not user.check_password(self.validated_data["old_password"]):
-            raise serializers.ValidationError("Old password is incorrect")
-
-        user.set_password(self.validated_data["new_password"])
-        user.save()
-
-
+      
 
 class AdminProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.ImageField(
@@ -222,3 +179,41 @@ class AdminProfileSerializer(serializers.ModelSerializer):
             profile.save()
 
         return instance
+    
+        user.save()
+
+
+class AdminChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError("Passwords do not match")
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context["request"].user
+
+        if not user.is_superuser:
+            raise serializers.ValidationError("Only admin can change admin password")
+
+        if not user.check_password(self.validated_data["old_password"]):
+            raise serializers.ValidationError("Old password is incorrect")
+
+        user.set_password(self.validated_data["new_password"])
+
+
+class AdminDashboardSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField()
+    monthly_user_growth = serializers.DictField(child=serializers.IntegerField())
+
+
+# Project Name: Med Ai
+# Description: 
+# Auth: 
+# Apps:
+# Main APIs:
+# Swagger URL: https://test15.fireai.agency/api/doc/
+# Database: 

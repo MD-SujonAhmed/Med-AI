@@ -1,6 +1,7 @@
 
 from django.urls import path
 from .views import (
+    AdminDashboardStatsView,
     DashboardView,
     SignUpView,
     RequestOTPView,
@@ -44,6 +45,8 @@ urlpatterns = [
     path('admin/profile/', AdminProfileView.as_view(), name='admin_profile'),   
     path('admin/password/change/', AdminUpdatePasswordView.as_view(), name='admin_change_password'),
     
-    # Dashboard
+    # User Dashboard
     path('dashboard/<date>/', DashboardView.as_view(), name='user_dashboard'),
+    # Admin Dashboard
+    path('admin/dashboard/', AdminDashboardStatsView.as_view(), name='admin_dashboard'),
 ]
