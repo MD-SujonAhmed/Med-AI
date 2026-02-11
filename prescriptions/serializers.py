@@ -107,45 +107,49 @@ class PrescriptionSerializer(serializers.ModelSerializer):
 
         return instance
 
-    # def update(self, instance, validated_data):
-    #     # Prescription main fields
-    #     instance.doctor = validated_data.get('doctor', instance.doctor)
-    #     instance.next_appointment_date = validated_data.get('next_appointment_date', instance.next_appointment_date)
-    #     instance.save()
+    def create(self, validated_data):
 
-    #     # Patient update
-    #     patient_data = validated_data.get('patient')
-    #     if patient_data:
-    #         Patient.objects.update_or_create(prescription=instance, defaults=patient_data)
-
-    #     # Medicines update
-    #     medicines_data = validated_data.get('medicine_set', [])
-    #     for med in instance.medicine_set.all():
-    #         for t in ["morning", "afternoon", "evening", "night"]:
-    #             time_obj = getattr(med, t, None)
-    #             if time_obj:
-    #                 time_obj.delete()
-    #         med.delete()
-
-    #     for med in medicines_data:
-    #         times = {}
-    #         for t in ["morning", "afternoon", "evening", "night"]:
-    #             time_data = med.pop(t, None)
-    #             if time_data:
-    #                 times[t] = Medicine_Time.objects.create(**time_data)
-    #         med_obj = Medicine.objects.create(prescription=instance, **med)
-    #         for t, obj in times.items():
-    #             setattr(med_obj, t, obj)
-    #         med_obj.save()
-
-    #     # Medical tests update
-    #     tests_data = validated_data.get('medicaltest_set', [])
-    #     instance.medicaltest_set.all().delete()
-    #     for test in tests_data:
-    #         MedicalTest.objects.create(prescription=instance, **test)
-
-    #     return instance
-
+        patient_data = validated_data.pop("patient", None)
+        medicines_data = validated_data.pop("medicine_set", [])
+        tests_data = validated_data.pop("medicaltest_set", [])
+    
+        # Create Prescription
+        prescription = Prescription.objects.create(**validated_data)
+    
+        # Create Patient
+        if patient_data:
+            Patient.objects.create(
+                prescription=prescription,
+                **patient_data
+            )
+    
+        # Create Medicines
+        for med in medicines_data:
+            times = {}
+    
+            for t in ["morning", "afternoon", "evening", "night"]:
+                time_data = med.pop(t, None)
+                if time_data:
+                    times[t] = Medicine_Time.objects.create(**time_data)
+    
+            med_obj = Medicine.objects.create(
+                prescription=prescription,
+                **med
+            )
+    
+            for t, obj in times.items():
+                setattr(med_obj, t, obj)
+    
+            med_obj.save()
+    
+        # Create Medical Tests
+        for test in tests_data:
+            MedicalTest.objects.create(
+                prescription=prescription,
+                **test
+            )
+    
+        return prescription
 class PramcySerializer(serializers.ModelSerializer):
     
     class Meta:
