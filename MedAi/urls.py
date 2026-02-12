@@ -14,6 +14,8 @@ urlpatterns = [
     # path("test/", include("Test.urls")),
     path("doctors/", include("doctors.urls")),
     path("treatments/", include("prescriptions.urls")),
+    # Chatbot URLs
+    path("chatboat/", include("chatboat.urls")),
 
     # Documentation URLs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

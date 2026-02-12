@@ -27,7 +27,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',  
+    'django.contrib.staticfiles', 
+     
 ]
 
 THIRD_PARTY_APPS = [
@@ -44,6 +45,7 @@ LOCAL_APPS = [
     # 'Test',
     'doctors',
     'prescriptions',
+    'chatboat',
 ]
 
 INSTALLED_APPS += THIRD_PARTY_APPS + LOCAL_APPS
@@ -171,15 +173,15 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 #     'django.contrib.auth.backends.ModelBackend',
 # )
 
+AI_BASE_URL = "http://localhost:8001"
+
 # Media files (user uploads)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT =   os.path.join(BASE_DIR, 'media')
-
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # Access token valid for 5 minutes
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),            
 }
+

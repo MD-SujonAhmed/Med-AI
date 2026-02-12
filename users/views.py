@@ -30,10 +30,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models.functions import TruncMonth
 from django.db.models import Count
-
 from prescriptions.serializers  import PramcySerializer
 from prescriptions.models  import pharmacy
-
 
 
 # -----------------------------
