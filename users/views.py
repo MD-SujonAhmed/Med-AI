@@ -5,10 +5,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
+from doctors.models import Doctor
 from prescriptions.models import Medicine, Prescription
 from .serializers import (
+    AdminUserListSerializer,
     ChangePasswordSerializer,
     DeactivateAccountSerializer,
+    DoctorListSerializer,
     SingUpSerializer,
     OtpVerificationSerializer,
     ResetPasswordSerializer,
@@ -27,6 +30,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models.functions import TruncMonth
 from django.db.models import Count
+
+from prescriptions.serializers  import PramcySerializer
+from prescriptions.models  import pharmacy
 
 
 
@@ -395,8 +401,6 @@ class AdminProfileView(APIView):
         serializer.save()
         return Response(serializer.data, status=200)
     
-
-
 class AdminDashboardStatsView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
@@ -420,3 +424,43 @@ class AdminDashboardStatsView(APIView):
 })
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
+
+class UserManagementView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+    total_users = Users.objects.count()
+    def get(self, request):
+        users = Users.objects.all()
+        total_usaers= Users.objects.count()
+        serializer = AdminUserListSerializer(users, many=True)
+        return Response({
+            "users": serializer.data,
+            "total_users": total_usaers
+        }, status=200)    
+    
+    
+class DoctorListView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+
+    def get(self, request):
+        doctors = Doctor.objects.all()
+        doctors_count = Doctor.objects.count()
+        serializer = DoctorListSerializer(doctors, many=True)
+        return Response({
+            "doctors": serializer.data,
+            "total_doctors": doctors_count
+        }, status=200)  
+    
+
+class PharmacyListView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+    
+    def get(self,request):
+        pharmacies=pharmacy.objects.all()
+        pharmacies_count=pharmacy.objects.count()
+        serializer=PramcySerializer(pharmacies,many=True)
+        return Response({
+            "pharmacies":serializer.data,
+            "total_pharmacies":pharmacies_count
+        },status=200
+        )
+  

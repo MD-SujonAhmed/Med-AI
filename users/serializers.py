@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from doctors.models import Doctor
 from .models import Users, UserProfile
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 
@@ -208,6 +210,29 @@ class AdminChangePasswordSerializer(serializers.Serializer):
 class AdminDashboardSerializer(serializers.Serializer):
     total_users = serializers.IntegerField()
     monthly_user_growth = serializers.DictField(child=serializers.IntegerField())
+    
+
+class AdminUserListSerializer(serializers.ModelSerializer):
+    address = serializers.CharField(source="profile.address", read_only=True)
+    age = serializers.IntegerField(source="profile.age", read_only=True)
+    # Count=Users.objects.count()
+
+    class Meta:
+        model = Users
+        fields = [
+            "full_name",
+            "email",
+            "address",
+            "age",
+        ]
+        
+
+class DoctorListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Doctor
+        fields = ['name', 'sex', 'specialization', 'hospital_name', 'doctor_email']
+        
+
 
 
 # Project Name: Med Ai
@@ -217,3 +242,4 @@ class AdminDashboardSerializer(serializers.Serializer):
 # Main APIs:
 # Swagger URL: https://test15.fireai.agency/api/doc/
 # Database: 
+

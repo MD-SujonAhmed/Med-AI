@@ -3,8 +3,10 @@ from django.urls import path
 from .views import (
     AdminDashboardStatsView,
     DashboardView,
+    DoctorListView,
     SignUpView,
     RequestOTPView,
+    UserManagementView,
     VerifyOTPView,
     ResetPasswordView,
     LoginView,
@@ -14,7 +16,8 @@ from .views import (
     AdminProfileView,
     AdminUpdatePasswordView,
     LogoutView,
-    DeleteAccountView
+    DeleteAccountView,
+    PharmacyListView,
 )
 
 urlpatterns = [
@@ -49,4 +52,7 @@ urlpatterns = [
     path('dashboard/<date>/', DashboardView.as_view(), name='user_dashboard'),
     # Admin Dashboard
     path('admin/dashboard/', AdminDashboardStatsView.as_view(), name='admin_dashboard'),
+    path('admin/users/', UserManagementView.as_view(), name='admin_user_management'),
+    path('admin/doctors/', DoctorListView.as_view(), name='admin_doctor_list'),
+    path('admin/pharmacists/', PharmacyListView.as_view(), name='admin_pharmacist_list'),
 ]
