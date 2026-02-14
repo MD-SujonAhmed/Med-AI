@@ -26,8 +26,8 @@ class Patient(models.Model):
     )
     name = models.CharField(max_length=100)
     age = models.IntegerField()
-    sex = models.CharField(max_length=10)
-    health_issues = models.TextField()
+    sex = models.CharField(max_length=10,null=True, blank=True)
+    health_issues = models.TextField(null=True, blank=True)
 
 class Medicine_Time(models.Model):
     time=models.TimeField()
