@@ -3,6 +3,7 @@ attrs==25.4.0
 certifi==2026.1.4
 charset-normalizer==3.4.4
 Django==6.0.1
+django-cors-headers==4.9.0
 django-nested-admin==4.1.6
 django-redis==6.0.0
 djangorestframework==3.16.1
