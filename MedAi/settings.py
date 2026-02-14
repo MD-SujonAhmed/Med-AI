@@ -15,7 +15,7 @@ from datetime import timedelta
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-eqfq4=n$10h9pvcz1#=3fem65$c&eh7x)g8nsygt9m(cq(#u(#')
 DEBUG = True
 
-ALLOWED_HOSTS = ['172.252.13.97','127.0.0.1']
+ALLOWED_HOSTS = ['172.252.13.97','127.0.0.1','test15.fireai.agency']
 AUTH_USER_MODEL = 'users.Users'  # Custom user model
 
 
