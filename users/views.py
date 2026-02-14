@@ -462,3 +462,7 @@ class PharmacyListView(APIView):
         },status=200
         )
   
+
+class HelthView(APIView):
+    def get(self,request):
+        return Response({"message":"API is healthy"},status=200)

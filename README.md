@@ -248,3 +248,5 @@ FastAPI is not running or not reachable.
 - AI service: FastAPI
 - Client: Flutter
 
+### Admin  Deasboard 
+
