@@ -1,56 +1,45 @@
-
-
 from pathlib import Path
 from decouple import config
+from datetime import timedelta
+import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-import os
-from datetime import timedelta
 
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-eqfq4=n$10h9pvcz1#=3fem65$c&eh7x)g8nsygt9m(cq(#u(#')
+
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['172.252.13.97','127.0.0.1','test15.fireai.agency']
+ALLOWED_HOSTS = ['172.252.13.97', '127.0.0.1', 'test15.fireai.agency']
+
 AUTH_USER_MODEL = 'users.Users'  # Custom user model
 
-
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles', 
-     
-]
-
-THIRD_PARTY_APPS = [
-    # Add third-party apps here
-    'rest_framework',                                   # Django Rest Framework
-    'drf_spectacular',                                  # DRF Documentation
-    'rest_framework_simplejwt.token_blacklist',         # For logout functionality
-    'nested_admin', 
-    # Nested Admin
-    'corsheaders',                                      # CORS Headers
-]
-
-LOCAL_APPS = [
-    # Add local apps here
+    'django.contrib.staticfiles',
+    
+    # Third-party apps
+    'rest_framework',
+    'drf_spectacular',
+    'rest_framework_simplejwt.token_blacklist',
+    'nested_admin',
+    'corsheaders',
+    'django_celery_beat',
+    'django_celery_results',
+    
+    # Local apps
     'users',
-    # 'Test',
     'doctors',
     'prescriptions',
     'chatboat',
 ]
-
-INSTALLED_APPS += THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -61,7 +50,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    "django.middleware.common.CommonMiddleware",
 ]
 
 ROOT_URLCONF = 'MedAi.urls'
@@ -83,10 +71,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'MedAi.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -94,10 +79,7 @@ DATABASES = {
     }
 }
 
-
 # Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -112,10 +94,9 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-# REST Framework Configuration and JWT Authentication
 
+# REST Framework Configuration
 REST_FRAMEWORK = {
-    
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -129,67 +110,79 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
-# Caching Configuration using Redis
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
-
-
-# Internationalization 
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
+# Internationalization
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = 'Asia/Dhaka'
 USE_I18N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-STATIC_URL = 'static/'
+# Media files (user uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Email Configuration (OTP)
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-# # Social Authentication Backends
-# AUTHENTICATION_BACKENDS = (
-#     'social_core.backends.google.GoogleOAuth2',
-#     'django.contrib.auth.backends.ModelBackend',
-# )
-
+# AI Service
 AI_BASE_URL = "http://localhost:8001"
 
-# Media files (user uploads)
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-MEDIA_URL = '/media/'
-MEDIA_ROOT =   os.path.join(BASE_DIR, 'media')
+# JWT Configuration
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # Access token valid for 5 minutes
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),            
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
+# CORS
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:5174",
 ]
+
+# ============= Firebase Admin SDK Configuration =============
+import firebase_admin
+from firebase_admin import credentials
+
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'firebase-service-account.json')
+
+# Initialize Firebase Admin (only once)
+if not firebase_admin._apps:
+    try:
+        cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+        firebase_admin.initialize_app(cred)
+        print("✅ Firebase Admin SDK initialized successfully")
+    except Exception as e:
+        print(f"⚠️ Firebase Admin SDK initialization failed: {e}")
+
+# ============= Celery Configuration =============
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Dhaka'
+
+# Low stock threshold
+LOW_STOCK_THRESHOLD_DAYS = 3
+
+# Celery Beat Schedule (must be at the end)
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'check-low-stock-daily': {
+        'task': 'prescriptions.tasks.check_low_stock_and_notify',
+        'schedule': crontab(hour=8, minute=0),  # Every day at 8 AM
+    },
+}
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

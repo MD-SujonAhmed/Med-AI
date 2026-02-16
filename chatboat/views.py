@@ -67,7 +67,7 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
                 else:
                     files = {"file": (filename, uploaded.read(), mime)}
 
-                r = requests.post(url, params=params, files=files, timeout=120)
+                r = requests.post(url, params=params, files=files, timeout=120)     
 
             r.raise_for_status()
             data = r.json()

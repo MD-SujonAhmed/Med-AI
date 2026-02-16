@@ -463,6 +463,16 @@ class PharmacyListView(APIView):
         )
   
 
-class HelthView(APIView):
-    def get(self,request):
-        return Response({"message":"API is healthy"},status=200)
+class SaveFCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('fcm_token')
+        if not token:
+            return Response({"detail": "fcm_token required"}, status=400)
+
+        user = request.user
+        user.fcm_token = token
+        user.save(update_fields=['fcm_token'])
+
+        return Response({"success": True}, status=200)

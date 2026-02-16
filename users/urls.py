@@ -4,7 +4,7 @@ from .views import (
     AdminDashboardStatsView,
     DashboardView,
     DoctorListView,
-    HelthView,
+    SaveFCMTokenView,
     SignUpView,
     RequestOTPView,
     UserManagementView,
@@ -47,7 +47,7 @@ urlpatterns = [
     
     # Admin Profile & Change Password (JWT + Admin Role required)
     path('admin/profile/', AdminProfileView.as_view(), name='admin_profile'),   
-    path(' ', AdminUpdatePasswordView.as_view(), name='admin_change_password'),
+    path('admin/password/change/', AdminUpdatePasswordView.as_view(), name='admin_change_password'),
     
     # User Dashboard
     path('dashboard/<date>/', DashboardView.as_view(), name='user_dashboard'),
@@ -56,5 +56,7 @@ urlpatterns = [
     path('admin/users/', UserManagementView.as_view(), name='admin_user_management'),
     path('admin/doctors/', DoctorListView.as_view(), name='admin_doctor_list'),
     path('admin/pharmacists/', PharmacyListView.as_view(), name='admin_pharmacist_list'),
+    
+    path('fcm/token/', SaveFCMTokenView.as_view(), name='save_fcm_token'),
     
 ]
