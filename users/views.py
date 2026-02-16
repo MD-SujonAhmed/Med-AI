@@ -80,7 +80,7 @@ class RequestOTPView(APIView):
             status=status.HTTP_200_OK,
         )
 
-
+# Verify OTP for both signup and password reset 
 class VerifyOTPView(APIView):
     """Verify OTP for signup or password reset"""
     def post(self, request):
@@ -405,6 +405,7 @@ class AdminDashboardStatsView(APIView):
     def get(self, request):
         total_users = Users.objects.count()
 
+        # Monthly user growth
         monthly_users_qs = (
             Users.objects
             .annotate(month=TruncMonth('created_at'))
@@ -412,17 +413,34 @@ class AdminDashboardStatsView(APIView):
             .annotate(count=Count('id'))
             .order_by('month')
         )
-        monthly_user_data = {d['month'].strftime("%b"): d['count'] for d in monthly_users_qs}
 
+        monthly_user_data = {
+            d['month'].strftime("%Y-%m"): d['count']
+            for d in monthly_users_qs if d['month']
+        }
 
-        # Serializer দিয়ে validate এবং structure enforce করা
+        # Monthly medicine added
+        monthly_medicine_qs = (
+            Medicine.objects
+            .annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(count=Count('id'))
+            .order_by('month')
+        )
+
+        monthly_medicine_data = {
+            d['month'].strftime("%Y-%m"): d['count']
+            for d in monthly_medicine_qs if d['month']
+        }
+
         serializer = AdminDashboardSerializer(data={
-    "total_users": total_users,
-    "monthly_user_growth": monthly_user_data,
-})
+            "total_users": total_users,
+            "monthly_user_growth": monthly_user_data,
+            "monthly_medicine_requests": monthly_medicine_data,
+        })
+
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
-
 class UserManagementView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
     total_users = Users.objects.count()
@@ -476,3 +494,4 @@ class SaveFCMTokenView(APIView):
         user.save(update_fields=['fcm_token'])
 
         return Response({"success": True}, status=200)
+    

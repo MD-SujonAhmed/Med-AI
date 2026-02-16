@@ -210,11 +210,13 @@ class AdminChangePasswordSerializer(serializers.Serializer):
 class AdminDashboardSerializer(serializers.Serializer):
     total_users = serializers.IntegerField()
     monthly_user_growth = serializers.DictField(child=serializers.IntegerField())
+    monthly_medicine_requests = serializers.DictField(child=serializers.IntegerField())
     
 
 class AdminUserListSerializer(serializers.ModelSerializer):
     address = serializers.CharField(source="profile.address", read_only=True)
     age = serializers.IntegerField(source="profile.age", read_only=True)
+    image = serializers.ImageField(source="profile.profile_picture", read_only=True)
     # Count=Users.objects.count()
 
     class Meta:
@@ -224,6 +226,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "email",
             "address",
             "age",
+            "image",
         ]
         
 

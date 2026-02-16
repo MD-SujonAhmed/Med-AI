@@ -71,13 +71,11 @@ class UserProfile(models.Model):
     health_condition = models.TextField(blank=True, null=True)
     wakeup_time = models.TimeField(blank=True, null=True)
     breakfast_time = models.TimeField(blank=True, null=True)
-    lunch_time = models.TimeField(blank=True, null=True)
+    lunch_time = models.TimeField(blank=True, null=True)        
     dinner_time = models.TimeField(blank=True, null=True)
 
     def __str__(self):
         return f"Profile of {self.user.email}"
-        return f"Profile of {self.user.email}"
-
 
 
 

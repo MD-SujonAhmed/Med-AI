@@ -151,7 +151,6 @@ class PrescriptionSerializer(serializers.ModelSerializer):
     
         return prescription
 
-
 class PramcySerializer(serializers.ModelSerializer):
     
     class Meta:

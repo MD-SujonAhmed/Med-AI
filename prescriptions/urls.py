@@ -16,5 +16,5 @@ router.register(r'medicines', UserAllMedicineViewSet, basename='user_medicines')
 urlpatterns = [
     path('', include(router.urls)),
     path('prescription/from-ai/', CreatePrescriptionFromAIView.as_view(), name='prescription-from-ai'),
-    path('medicine/mark-taken/', MarkMedicineTakenView.as_view(), name='medicine-mark-taken'),
+    path('medicine/mark-taken/<int:medicine_id>/', MarkMedicineTakenView.as_view(), name='medicine-mark-taken'),
 ]

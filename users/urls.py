@@ -1,4 +1,3 @@
-
 from django.urls import path
 from .views import (
     AdminDashboardStatsView,
@@ -59,4 +58,5 @@ urlpatterns = [
     
     path('fcm/token/', SaveFCMTokenView.as_view(), name='save_fcm_token'),
     
+
 ]

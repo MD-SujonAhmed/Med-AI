@@ -12,7 +12,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-eqfq4=n$10h9pvcz1#=3f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['172.252.13.97', '127.0.0.1', 'test15.fireai.agency']
+ALLOWED_HOSTS = ['test15.fireai.agency', '172.252.13.97', '127.0.0.1']
 
 AUTH_USER_MODEL = 'users.Users'  # Custom user model
 
@@ -33,13 +33,13 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_celery_beat',
     'django_celery_results',
+    'celery',
     
     # Local apps
     'users',
     'doctors',
     'prescriptions',
-    'chatboat',
-    'celery'
+    'chatboat'
 ]
 
 MIDDLEWARE = [
@@ -164,7 +164,7 @@ if not firebase_admin._apps:
     except Exception as e:
         print(f"⚠️ Firebase Admin SDK initialization failed: {e}")
 
-# ============= Celery Configuration =============
+# = == == == == == == Celery Configuration ==  == == == == == =
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
