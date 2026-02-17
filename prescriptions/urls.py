@@ -5,7 +5,8 @@ from .views import (
     ParmacyViewSet,
     PrescriptionViewSet,
     UserAllMedicineViewSet,
-    MarkMedicineTakenView
+    MarkMedicineTakenView,
+    UserNotificationListView
 )
 
 router = DefaultRouter()
@@ -17,4 +18,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('prescription/from-ai/', CreatePrescriptionFromAIView.as_view(), name='prescription-from-ai'),
     path('medicine/mark-taken/<int:medicine_id>/', MarkMedicineTakenView.as_view(), name='medicine-mark-taken'),
+    # ✅ Notification list endpoint
+    path('notificaions/', UserNotificationListView.as_view(), name='user-notifications'),
 ]

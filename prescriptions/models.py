@@ -1,7 +1,5 @@
 from django.db import models
-from django.utils import timezone
 from users.models import Users
-
 # Create your models here.
 class Prescription(models.Model):
     users=models.ForeignKey('users.Users', on_delete=models.CASCADE)
@@ -68,8 +66,6 @@ class pharmacy(models.Model):
     
     def __str__(self):
         return self.pharmacy_nam
-
-
 class NotificationLog(models.Model):
     """
     Track all notifications sent to users

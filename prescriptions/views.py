@@ -2,12 +2,9 @@ from rest_framework.response import Response  # ✅ সঠিক import
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-from django.conf import settings
-from datetime import datetime, timedelta
-from django.utils import timezone
 
-from .models import Prescription, Patient, Medicine, pharmacy
-from .serializers import PrescriptionSerializer, PramcySerializer, UserMedicineSerializer
+from .models import Prescription, Patient, Medicine, pharmacy,NotificationLog
+from .serializers import PrescriptionSerializer, PramcySerializer, UserMedicineSerializer,NotificationLogSerializer
 from users.permissions import IsNormalUser
 from prescriptions.tasks import send_medicine_reminder, send_push_notification
 
@@ -146,3 +143,11 @@ class MarkMedicineTakenView(APIView):
                 {'error': 'Medicine is out of stock'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+class UserNotificationListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        logs = NotificationLog.objects.filter(user=request.user).order_by('-sent_at')
+        serializer = NotificationLogSerializer(logs, many=True)
+        return Response(serializer.data, status=200)

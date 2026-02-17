@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Prescription, Patient, Medicine, Medicine_Time, MedicalTest, pharmacy
+from .models import Prescription, Patient, Medicine, Medicine_Time, MedicalTest, pharmacy,NotificationLog
 
 class MedicineTimeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -157,7 +157,22 @@ class PramcySerializer(serializers.ModelSerializer):
         model = pharmacy
         fields = [ 'pharmacy_name', 'Pharmacy_Address', 'website_link']
         
+
 class UserMedicineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medicine
         fields = ['id', 'name', 'how_many_day', 'stock','prescription_id']
+        
+ 
+class NotificationLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationLog
+        fields = [
+            'id',
+            'notification_type',
+            'title',
+            'body',
+            'is_sent',
+            'sent_at',
+            'medicine',
+        ]

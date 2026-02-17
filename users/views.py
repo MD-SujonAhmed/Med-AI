@@ -443,15 +443,17 @@ class AdminDashboardStatsView(APIView):
         return Response(serializer.data)
 class UserManagementView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
-    total_users = Users.objects.count()
+
     def get(self, request):
         users = Users.objects.all()
-        total_usaers= Users.objects.count()
+        total_users = users.count()   # ✅ Query inside method
+
         serializer = AdminUserListSerializer(users, many=True)
+
         return Response({
             "users": serializer.data,
-            "total_users": total_usaers
-        }, status=200)    
+            "total_users": total_users
+        }, status=200)   
     
     
 class DoctorListView(APIView):

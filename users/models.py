@@ -30,7 +30,6 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(email, full_name, password, **extra_fields)
-
 # Custom User Model
 class Users(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(max_length=100)
@@ -53,7 +52,6 @@ class Users(AbstractBaseUser, PermissionsMixin):
         
         return self.full_name
     
-
 class UserProfile(models.Model):
     user = models.OneToOneField(
         Users,
