@@ -360,7 +360,7 @@ class DeleteAccountView(APIView):
 # ----------------------------- Admin Views -----------------------------
 
 
-    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+
 
 # ----------------------------- Admin Dashboard View -----------------------------
 
