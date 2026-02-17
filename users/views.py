@@ -355,13 +355,6 @@ class DeleteAccountView(APIView):
             {"message": "Account deleted permanently."},
             status=status.HTTP_200_OK
         )
-
-
-# ----------------------------- Admin Views -----------------------------
-
-
-
-
 # ----------------------------- Admin Dashboard View -----------------------------
 
 class AdminUpdatePasswordView(APIView):

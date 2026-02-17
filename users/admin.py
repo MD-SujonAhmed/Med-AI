@@ -12,14 +12,14 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('full_name',)}),
-        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions','fcm_token')}),
     )
 
     # Field sets for creating new user
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'full_name', 'password1', 'password2', 'is_staff', 'is_active', 'is_superuser')}
+            'fields': ('email', 'full_name', 'password1', 'password2', 'is_staff', 'is_active', 'is_superuser','fcm_token'),}
         ),
     )
 

@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_celery_beat',
     'django_celery_results',
-    'celery',
     
     # Local apps
     'users',
@@ -187,3 +186,5 @@ CELERY_BEAT_SCHEDULE = {
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# user = Users.objects.get(email="user@gmail.com")
