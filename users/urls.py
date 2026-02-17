@@ -35,7 +35,6 @@ urlpatterns = [
     
     # Delete Account
     path('account/delete/', DeleteAccountView.as_view(), name='delete_account'),
-
     # User Profile ,# JWT required 
     path('profile/', MyProfileView.as_view(), name='user_profile'),
     

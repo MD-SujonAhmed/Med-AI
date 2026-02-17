@@ -25,5 +25,40 @@ class UserAdmin(BaseUserAdmin):
 
     filter_horizontal = ('groups', 'user_permissions',)
 
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'address',
+        'age',
+        'wakeup_time',
+        'breakfast_time',
+        'lunch_time',
+        'dinner_time',
+    )
+
+    search_fields = (
+        'user__email',
+        'address',
+    )
+
+    list_filter = (
+        'age',
+    )
+
+    fieldsets = (
+        ('User Information', {
+            'fields': ('user', 'profile_picture')
+        }),
+        ('Personal Details', {
+            'fields': ('address', 'age', 'health_condition')
+        }),
+        ('Daily Routine Times', {
+            'fields': ('wakeup_time', 'breakfast_time', 'lunch_time', 'dinner_time')
+        }),
+    )
+
 # Register the custom user model with the admin
 admin.site.register(Users, UserAdmin)
+
