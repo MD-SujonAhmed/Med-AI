@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from firebase_admin import messaging
 from .models import Medicine, NotificationLog
 
-
 @shared_task
 def send_medicine_reminder(medicine_id, slot_name, slot_time):
     """
@@ -45,8 +44,6 @@ def send_medicine_reminder(medicine_id, slot_name, slot_time):
     )
 
     return f"Reminder sent for {medicine.name}"
-
-
 @shared_task
 def check_low_stock_and_notify():
     """

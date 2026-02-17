@@ -338,17 +338,16 @@ class LogoutView(APIView):
 
 class DeleteAccountView(APIView):
     permission_classes = [IsAuthenticated]
-
-    def post(self, request):
+    def delete(self, request):
+        # validate password
         serializer = DeleteAccountSerializer(
-            data=request.data,
+            data=request.data,  # DELETE body can still be sent as JSON
             context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-
+        # delete the user
         user = request.user
         user.delete()
-
         return Response(
             {"message": "Account deleted permanently."},
             status=status.HTTP_200_OK
