@@ -107,7 +107,6 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = [
             "id",
-            "title",
             "created_at",
             "updated_at",
             "message_count",

@@ -1,7 +1,9 @@
+import os
 import time
 import requests
 import mimetypes
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 
 from rest_framework import status
@@ -40,7 +42,8 @@ class ChatAPIView(APIView):
     permission_classes = [IsAuthenticated, IsNormalUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
-    AI_CHATBOT_URL = "http://127.0.0.1:8080/ai/chat"
+    AI_CHATBOT_URL = settings.AI_CHATBOT_URL
+    AI_TTS_URL = settings.AI_TTS_URL
 
     def post(self, request):
         serializer = ChatRequestSerializer(data=request.data)
@@ -180,7 +183,7 @@ class ChatAPIView(APIView):
             tts_payload = tts_data.get("payload")
             try:
                 tts_resp = requests.post(
-                    "http://127.0.0.1:8080/voice/tts",
+                    settings.AI_TTS_URL,
                     json=tts_payload,
                     timeout=60
                 )

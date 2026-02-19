@@ -134,7 +134,8 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # AI Service
-AI_BASE_URL = "http://localhost:8001"
+AI_CHATBOT_URL = config("AI_CHATBOT_URL")
+AI_TTS_URL = config("AI_TTS_URL")
 
 # JWT Configuration
 SIMPLE_JWT = {

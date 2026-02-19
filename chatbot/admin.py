@@ -4,8 +4,8 @@ from .models import Conversation, Message
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "title", "updated_at", "created_at")
-    search_fields = ("user__username", "title")
+    list_display = ("id", "user", "updated_at", "created_at")
+    search_fields = ("user__username",)
     ordering = ("-updated_at",)
 
 
