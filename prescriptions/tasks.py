@@ -7,39 +7,45 @@ from .models import Medicine, NotificationLog
 
 
 @shared_task
-def send_medicine_reminder(medicine_id, slot_name, slot_time):
-    """
-    Send reminder 30 min before medicine time.
-    Prescription শেষ হলে আর schedule করবে না।
-    """
-    try:
-        medicine = Medicine.objects.select_related('prescription__users').get(id=medicine_id)
-    except Medicine.DoesNotExist:
-        return f"Medicine {medicine_id} not found"
+def send_grouped_medicine_reminder(user_id, slot_name, slot_time):
+    from users.models import Users
 
-    # ✅ Check করো prescription এর মেয়াদ শেষ হয়েছে কিনা
-    prescription = medicine.prescription
-    start_date = prescription.created_at.date()
-    end_date = start_date + timedelta(days=medicine.how_many_day - 1)
+    try:
+        user = Users.objects.get(id=user_id)
+    except Users.DoesNotExist:
+        return "User not found"
+
     today = timezone.now().date()
 
-    if today > end_date:
-        return f"Medicine {medicine.name} course completed. Stopping reminders."
+    slot_filter = {f"{slot_name.lower()}__isnull": False}
+    medicines = Medicine.objects.filter(
+        prescription__users=user,
+        **slot_filter
+    ).select_related('prescription')
 
-    user = medicine.prescription.users
+    active_medicines = []
+    for med in medicines:
+        start_date = med.prescription.created_at.date()
+        end_date = start_date + timedelta(days=med.how_many_day - 1)
+        if start_date <= today <= end_date:
+            active_medicines.append(med.name)
 
-    title = "💊 Medicine Reminder"
-    body = f"Time to take {medicine.name} ({slot_name} dose)"
+    if not active_medicines:
+        return "No active medicines for this slot"
+
+    if len(active_medicines) == 1:
+        body = f"Time to take {active_medicines[0]}"
+    else:
+        names = ", ".join(active_medicines)
+        body = f"Time to take: {names}"
 
     send_push_notification(
         user,
-        title,
+        f"💊 Medicine Reminder ({slot_name})",
         body,
-        notification_type='medicine_reminder',
-        medicine=medicine
+        notification_type='medicine_reminder'
     )
 
-    # ✅ কালকের জন্য Re-schedule
     now = timezone.now()
     tomorrow_slot = datetime.combine(
         now.date() + timedelta(days=1),
@@ -48,38 +54,26 @@ def send_medicine_reminder(medicine_id, slot_name, slot_time):
     tomorrow_slot = timezone.make_aware(tomorrow_slot)
     reminder_time = tomorrow_slot - timedelta(minutes=30)
 
-    # ✅ শুধু মেয়াদ থাকলে schedule করো
-    tomorrow_date = now.date() + timedelta(days=1)
-    if tomorrow_date <= end_date:
-        send_medicine_reminder.apply_async(
-            args=[medicine_id, slot_name, slot_time],
-            eta=reminder_time
-        )
-
-    return f"Reminder sent for {medicine.name}"
+    send_grouped_medicine_reminder.apply_async(
+        args=[user_id, slot_name, slot_time],
+        eta=reminder_time
+    )
+    return f"Grouped reminder sent: {active_medicines}"
 
 
 @shared_task
 def check_low_stock_and_notify():
-    """
-    Daily task: low stock alert
-    """
     threshold = getattr(settings, 'LOW_STOCK_THRESHOLD_DAYS', 3)
-
-    # ✅ stock=0 আলাদাভাবে handle করো (lte threshold মানে 0 ও আসবে)
     low_stock = Medicine.objects.select_related(
         'prescription__users'
-    ).filter(stock__lte=threshold, stock__gt=0)  # stock > 0
-
+    ).filter(stock__lte=threshold, stock__gt=0)
     out_of_stock = Medicine.objects.select_related(
         'prescription__users'
     ).filter(stock=0)
-
     count = 0
-
     for med in low_stock:
         user = med.prescription.users
-        body = f"⚠️ {med.name} এর মাত্র {med.stock} দিনের stock বাকি আছে!"
+        body = f"⚠️ {med.name} has only {med.stock} day(s) of stock left!"
         send_push_notification(
             user,
             "Low Stock Alert",
@@ -88,10 +82,9 @@ def check_low_stock_and_notify():
             medicine=med
         )
         count += 1
-
     for med in out_of_stock:
         user = med.prescription.users
-        body = f"🚨 {med.name} এর stock শেষ হয়ে গেছে! এখনই কিনুন।"
+        body = f"🚨 {med.name} is out of stock! Please buy now."
         send_push_notification(
             user,
             "Out of Stock Alert",
@@ -105,10 +98,6 @@ def check_low_stock_and_notify():
 
 
 def send_push_notification(user, title, body, notification_type='medicine_reminder', medicine=None):
-    """
-    Firebase push notification send করো এবং log করো
-    """
-    # Log entry তৈরি করো
     log = NotificationLog.objects.create(
         user=user,
         notification_type=notification_type,
@@ -118,7 +107,6 @@ def send_push_notification(user, title, body, notification_type='medicine_remind
         is_sent=False
     )
 
-    # ✅ FCM token check
     if not user.fcm_token:
         log.error_message = "No FCM token found for this user"
         log.save()
@@ -131,9 +119,7 @@ def send_push_notification(user, title, body, notification_type='medicine_remind
             body=body,
         ),
         token=user.fcm_token,
-        android=messaging.AndroidConfig(
-            priority='high',
-        ),
+        android=messaging.AndroidConfig(priority='high'),
         apns=messaging.APNSConfig(
             payload=messaging.APNSPayload(
                 aps=messaging.Aps(sound='default'),
@@ -149,7 +135,6 @@ def send_push_notification(user, title, body, notification_type='medicine_remind
         print(f"[PUSH] ✅ Sent! User: {user.email} | Medicine: {medicine.name if medicine else 'N/A'}")
 
     except messaging.UnregisteredError:
-        # ✅ Invalid token হলে user এর token clear করো
         log.error_message = "FCM token is invalid or unregistered"
         log.save()
         user.fcm_token = None

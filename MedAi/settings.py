@@ -180,10 +180,9 @@ from celery.schedules import crontab
 CELERY_BEAT_SCHEDULE = {
     'check-low-stock-daily': {
         'task': 'prescriptions.tasks.check_low_stock_and_notify',
-        'schedule': crontab(hour=8, minute=0),  # Every day at 8 AM
+        'schedule': crontab(hour=8, minute=0),
     },
 }
-
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

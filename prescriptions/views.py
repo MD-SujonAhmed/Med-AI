@@ -4,9 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from .models import Prescription, Patient, Medicine, pharmacy,NotificationLog
-from .serializers import PrescriptionSerializer, PramcySerializer, UserMedicineSerializer,NotificationLogSerializer
+from .serializers import PrescriptionSerializer, PramcySerializer, UserMedicineSerializer,NotificationLogSerializer, MedicalTestSerializer
 from users.permissions import IsNormalUser
-from prescriptions.tasks import send_medicine_reminder, send_push_notification
+from prescriptions.tasks import send_grouped_medicine_reminder, send_push_notification
+
 
 class PrescriptionViewSet(viewsets.ModelViewSet):
     queryset = Prescription.objects.all()
@@ -21,7 +22,6 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save()
-
 
 class CreatePrescriptionFromAIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -65,7 +65,6 @@ class CreatePrescriptionFromAIView(APIView):
             status=status.HTTP_201_CREATED
         )
 
-
 class UserAllMedicineViewSet(viewsets.ModelViewSet):
     serializer_class = UserMedicineSerializer
     permission_classes = [IsAuthenticated, IsNormalUser]
@@ -75,7 +74,6 @@ class UserAllMedicineViewSet(viewsets.ModelViewSet):
         return Medicine.objects.filter(
             prescription__users=self.request.user
         ).select_related("prescription")
-
 
 class ParmacyViewSet(viewsets.ModelViewSet):
     queryset = pharmacy.objects.all()
@@ -151,3 +149,81 @@ class UserNotificationListView(APIView):
         logs = NotificationLog.objects.filter(user=request.user).order_by('-sent_at')
         serializer = NotificationLogSerializer(logs, many=True)
         return Response(serializer.data, status=200)
+    
+class MedicineStockView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, medicine_id):
+        try:
+            medicine = Medicine.objects.get(
+                id=medicine_id,
+                prescription__users=request.user
+            )
+        except Medicine.DoesNotExist:
+            return Response({"error": "Medicine not found"}, status=404)
+
+        amount = request.data.get("amount", 0)
+        if not isinstance(amount, int) or amount <= 0:
+            return Response({"error": "Amount must be a positive number"}, status=400)
+
+        medicine.stock += amount
+        medicine.save()
+
+        return Response({
+            "message": f"{amount} stock added successfully",
+            "medicine": medicine.name,
+            "current_stock": medicine.stock
+        })
+
+class MarkMedicineTakenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, medicine_id):
+        try:
+            medicine = Medicine.objects.get(
+                id=medicine_id,
+                prescription__users=request.user
+            )
+        except Medicine.DoesNotExist:
+            return Response({"error": "Medicine not found"}, status=404)
+
+        if medicine.stock <= 0:
+            return Response({
+                "message": "Stock is empty! Please buy more.",
+                "current_stock": 0
+            }, status=400)
+
+        medicine.stock -= 1
+        medicine.save()
+
+        return Response({
+            "message": "Medicine marked as taken!",
+            "medicine": medicine.name,
+            "remaining_stock": medicine.stock
+        })
+
+class MedicineStockView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, medicine_id):
+        serializer = MedicineStockSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        try:
+            medicine = Medicine.objects.get(
+                id=medicine_id,
+                prescription__users=request.user
+            )
+        except Medicine.DoesNotExist:
+            return Response({"error": "Medicine not found"}, status=404)
+
+        amount = serializer.validated_data["amount"]
+        medicine.stock += amount
+        medicine.save()
+
+        return Response({
+            "message": f"{amount} stock added successfully",
+            "medicine": medicine.name,
+            "current_stock": medicine.stock
+        })
