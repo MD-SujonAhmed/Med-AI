@@ -1,9 +1,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from .models import Medicine
 
+_scheduled = set()
 
 @receiver(post_save, sender=Medicine)
 def schedule_medicine_reminder(sender, instance, created, **kwargs):
@@ -24,13 +25,19 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
 
     for slot_name, slot_obj in slots.items():
         if slot_obj and slot_obj.time:
-            
-            # ✅ string হলে convert করো
             slot_time = slot_obj.time
             if isinstance(slot_time, str):
                 slot_time = datetime.strptime(slot_time, '%H:%M:%S').time()
-            
+
             slot_time_str = slot_time.strftime('%H:%M:%S')
+
+            # ✅ Same user+slot+time already scheduled হলে skip করো
+            schedule_key = f"{user.id}_{slot_name}_{slot_time_str}"
+            if schedule_key in _scheduled:
+                print(f"[SCHEDULE] ⚠️ Already scheduled: {schedule_key}")
+                continue
+
+            _scheduled.add(schedule_key)
 
             slot_datetime = datetime.combine(now.date(), slot_time)
             slot_datetime = timezone.make_aware(slot_datetime)
