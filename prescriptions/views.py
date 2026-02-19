@@ -6,8 +6,6 @@ from .models import Prescription, Patient, Medicine, pharmacy,NotificationLog
 from .serializers import PrescriptionSerializer, PramcySerializer, UserMedicineSerializer,NotificationLogSerializer,MedicineStockSerializer
 from users.permissions import IsNormalUser
 from prescriptions.tasks import send_grouped_medicine_reminder, send_push_notification
-
-
 class PrescriptionViewSet(viewsets.ModelViewSet):
     queryset = Prescription.objects.all()
     serializer_class = PrescriptionSerializer
@@ -175,7 +173,7 @@ class MedicineStockView(APIView):
         })
 
 class MarkMedicineTakenView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsNormalUser]
 
     def post(self, request, medicine_id):
         try:
@@ -202,7 +200,7 @@ class MarkMedicineTakenView(APIView):
         })
 
 class MedicineStockView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsNormalUser]
 
     def post(self, request, medicine_id):
         serializer = MedicineStockSerializer(data=request.data)
