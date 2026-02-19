@@ -10,7 +10,7 @@ from .serializers import (
     NotificationLogSerializer,
     MedicineStockSerializer
 )
-from users.permissions import IsNormalUser
+from users.permissions import IsNormalUser, IsAdminOrSuperUser
 from prescriptions.tasks import send_push_notification
 
 
@@ -159,7 +159,7 @@ class MedicineStockView(APIView):
 
 
 class UserNotificationListView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsNormalUser, IsAdminOrSuperUser]
 
     def get(self, request):
         logs = NotificationLog.objects.filter(
