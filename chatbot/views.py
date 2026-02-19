@@ -28,7 +28,11 @@ class AIResponseParser:
     @staticmethod
     def extract_tts(ai_json):
         return ai_json.get("tts")
-
+    
+    @staticmethod
+    def extract_data(ai_json):
+        """Extract the data field from AI response"""
+        return ai_json.get("data")
 
 
 class ChatAPIView(APIView):
@@ -108,13 +112,14 @@ class ChatAPIView(APIView):
                 audio.read(),
                 guessed_type or "audio/m4a"
             )
-            print(audio.name)
-            print(audio.content_type)
+            print(f"Audio: {audio.name}, Type: {guessed_type or 'audio/m4a'}")
 
 
         if validated_data.get("file"):
             image = validated_data["file"]
+            image.seek(0)
             ai_files["file"] = (image.name, image.read(), image.content_type)
+            print(f"Image: {image.name}, Type: {image.content_type}")
 
         # 🔹 Forward Bearer token
         auth_header = request.headers.get("Authorization")
@@ -139,7 +144,8 @@ class ChatAPIView(APIView):
                     timeout=60,
                 )
             
-            print("AI Response", ai_response.status_code, ai_response.text)
+            print(f"AI Response Status: {ai_response.status_code}")
+            print(f"AI Response Body: {ai_response.text[:500]}")
 
 
         except requests.exceptions.RequestException as e:
@@ -163,7 +169,8 @@ class ChatAPIView(APIView):
             )
 
         ai_text = AIResponseParser.extract_text(ai_json)
-        ai_message_type = ai_json.get("message_type", "text")
+        ai_data_field = AIResponseParser.extract_data(ai_json)
+        ai_message_type = "text"  # Default to text
 
         tts_data = AIResponseParser.extract_tts(ai_json)
         voice_file_obj = None
@@ -194,12 +201,19 @@ class ChatAPIView(APIView):
             voice_file=voice_file_obj
         )
 
+        # Build response with data field
         response_data = {
             "conversation_id": conversation.id,
             "response": ai_text,
             "message_type": ai_message_type,
             "created_at": ai_message.created_at,
         }
+        
+        # Include data field if present
+        if ai_data_field is not None:
+            response_data["data"] = ai_data_field
+        
+        # Include voice URL if voice message
         if ai_message_type == "voice" and ai_message.voice_file:
             voice_url = request.build_absolute_uri(ai_message.voice_file.url)
             response_data["voice_url"] = voice_url
@@ -207,42 +221,200 @@ class ChatAPIView(APIView):
         return Response(response_data, status=200)
 
 
-
 class ChatHistoryAPIView(APIView):
+    """
+    Get all conversations with all messages for the authenticated user
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        Returns all conversations with complete message details grouped by sender
+        """
+        conversations = Conversation.objects.filter(
+            user=request.user
+        ).prefetch_related('messages').order_by('-updated_at')
+        
+        conversations_data = []
+        
+        for conversation in conversations:
+            messages = conversation.messages.all().order_by('created_at')
+            
+            # Group messages into pairs (user -> ai)
+            message_pairs = []
+            temp_pair = {}
+            
+            for message in messages:
+                message_data = {
+                    "message_id": message.id,
+                    "message_type": message.message_type,
+                    "text_content": message.text_content,
+                    "voice_file_url": request.build_absolute_uri(message.voice_file.url) if message.voice_file else None,
+                    "image_file_url": request.build_absolute_uri(message.image_file.url) if message.image_file else None,
+                    "created_at": message.created_at,
+                }
+                
+                if message.sender == Message.SenderType.USER:
+                    # Start a new pair with user message
+                    temp_pair = {
+                        "user": message_data,
+                        "ai": None
+                    }
+                elif message.sender == Message.SenderType.AI:
+                    # Complete the pair with AI message
+                    if temp_pair:
+                        temp_pair["ai"] = message_data
+                        message_pairs.append(temp_pair)
+                        temp_pair = {}
+                    else:
+                        # AI message without user message (shouldn't happen, but handle it)
+                        message_pairs.append({
+                            "user": None,
+                            "ai": message_data
+                        })
+            
+            # If there's an unpaired user message, add it
+            if temp_pair:
+                message_pairs.append(temp_pair)
+            
+            conversation_info = {
+                "id": conversation.id,
+                "message_count": messages.count(),
+                "messages": message_pairs,
+                "created_at": conversation.created_at,
+                "updated_at": conversation.updated_at,
+            }
+            
+            conversations_data.append(conversation_info)
+
+        return Response({
+            "count": conversations.count(),
+            "conversations": conversations_data
+        }, status=status.HTTP_200_OK)
+
+
+class ConversationDetailAPIView(APIView):
+    """
+    Get messages for a specific conversation (optional - if you still want this)
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, conversation_id):
+        """
+        Returns all messages for a specific conversation
+        """
         conversation = Conversation.objects.filter(
             id=conversation_id,
             user=request.user
-        ).first()
+        ).prefetch_related('messages').first()
 
         if not conversation:
-            return Response({"error": "Conversation not found"}, status=404)
+            return Response(
+                {"error": "Conversation not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        messages = conversation.messages.all()
-        serializer = MessageSerializer(messages, many=True)
+        messages = conversation.messages.all().order_by('created_at')
+        
+        # Group messages into pairs (user -> ai)
+        message_pairs = []
+        temp_pair = {}
+        
+        for message in messages:
+            message_data = {
+                "message_id": message.id,
+                "message_type": message.message_type,
+                "text_content": message.text_content,
+                "voice_file_url": request.build_absolute_uri(message.voice_file.url) if message.voice_file else None,
+                "image_file_url": request.build_absolute_uri(message.image_file.url) if message.image_file else None,
+                "created_at": message.created_at,
+            }
+            
+            if message.sender == Message.SenderType.USER:
+                temp_pair = {
+                    "user": message_data,
+                    "ai": None
+                }
+            elif message.sender == Message.SenderType.AI:
+                if temp_pair:
+                    temp_pair["ai"] = message_data
+                    message_pairs.append(temp_pair)
+                    temp_pair = {}
+                else:
+                    message_pairs.append({
+                        "user": None,
+                        "ai": message_data
+                    })
+        
+        if temp_pair:
+            message_pairs.append(temp_pair)
 
         return Response({
             "conversation_id": conversation.id,
-            "count": messages.count(),
-            "messages": serializer.data
-        })
+            "message_count": messages.count(),
+            "messages": message_pairs,
+            "created_at": conversation.created_at,
+            "updated_at": conversation.updated_at,
+        }, status=status.HTTP_200_OK)
 
 
 
 class ClearChatHistoryAPIView(APIView):
     """
-    Clear chat history for the authenticated user (optional feature)
+    Clear all chat history for the authenticated user
     """
     permission_classes = [IsAuthenticated]
     
     def delete(self, request):
-        """Delete all messages for the current user"""
+        """
+        Delete all conversations (and their messages) for the current user
+        """
         
-        deleted_count, _ = Message.objects.filter(user=request.user).delete()
+        # Get all conversations for the user
+        conversations = Conversation.objects.filter(user=request.user)
+        conversation_count = conversations.count()
+        
+        # Count messages before deletion
+        message_count = Message.objects.filter(conversation__user=request.user).count()
+        
+        # Delete all conversations (this will cascade delete all messages)
+        conversations.delete()
         
         return Response({
             'message': 'Chat history cleared successfully',
-            'deleted_count': deleted_count
+            'deleted_conversations': conversation_count,
+            'deleted_messages': message_count
+        }, status=status.HTTP_200_OK)
+
+
+class DeleteConversationAPIView(APIView):
+    """
+    Delete a specific conversation
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, conversation_id):
+        """
+        Delete a specific conversation and all its messages
+        """
+        conversation = Conversation.objects.filter(
+            id=conversation_id,
+            user=request.user
+        ).first()
+        
+        if not conversation:
+            return Response(
+                {"error": "Conversation not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Count messages before deletion
+        message_count = conversation.messages.count()
+        
+        # Delete the conversation (cascade deletes messages)
+        conversation.delete()
+        
+        return Response({
+            'message': 'Conversation deleted successfully',
+            'deleted_messages': message_count
         }, status=status.HTTP_200_OK)

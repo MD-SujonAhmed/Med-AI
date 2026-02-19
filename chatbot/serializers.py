@@ -8,6 +8,10 @@ class MessageSerializer(serializers.ModelSerializer):
         source="conversation.id",
         read_only=True
     )
+    
+    # ✅ Add full URLs for file fields
+    voice_file_url = serializers.SerializerMethodField()
+    image_file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -18,10 +22,30 @@ class MessageSerializer(serializers.ModelSerializer):
             "message_type",
             "text_content",
             "voice_file",
+            "voice_file_url",
             "image_file",
+            "image_file_url",
             "created_at",
         ]
         read_only_fields = ["id", "created_at", "conversation_id"]
+    
+    def get_voice_file_url(self, obj):
+        """Return full URL for voice file"""
+        if obj.voice_file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.voice_file.url)
+            return obj.voice_file.url
+        return None
+    
+    def get_image_file_url(self, obj):
+        """Return full URL for image file"""
+        if obj.image_file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image_file.url)
+            return obj.image_file.url
+        return None
 
 
 
@@ -74,6 +98,11 @@ class ChatResponseSerializer(serializers.Serializer):
 
 
 class ConversationSerializer(serializers.ModelSerializer):
+    """Serializer for conversation list"""
+    
+    message_count = serializers.IntegerField(read_only=True)
+    latest_message = serializers.SerializerMethodField()
+    
     class Meta:
         model = Conversation
         fields = [
@@ -81,5 +110,18 @@ class ConversationSerializer(serializers.ModelSerializer):
             "title",
             "created_at",
             "updated_at",
+            "message_count",
+            "latest_message",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+    
+    def get_latest_message(self, obj):
+        """Get the latest message preview"""
+        latest = obj.messages.last()
+        if latest:
+            return {
+                "text": latest.text_content[:50] if latest.text_content else None,
+                "sender": latest.sender,
+                "created_at": latest.created_at,
+            }
+        return None
