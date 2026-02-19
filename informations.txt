@@ -61,3 +61,48 @@ Password (again):1234
   }
 ]
 
+
+"""
+
+Local এ Test করার Step by Step
+
+ধাপ ১ - Redis চালু করো
+bashdocker run -d -p 6379:6379 redis
+
+Docker না থাকলে install করো: https://docker.com
+
+
+ধাপ ২ - ৩টা Terminal খোলো একসাথে
+Terminal 1:
+bashpython manage.py runserver
+Terminal 2:
+bashcelery -A MedAi worker --loglevel=info
+Terminal 3:
+bashcelery -A MedAi beat --loglevel=info
+```
+
+---
+
+### ধাপ ৩ - Test করো
+
+**Postman দিয়ে:**
+```
+1. Signup → Login → JWT Token নাও
+
+2. FCM Token Save করো
+POST /users/fcm/token/
+{ "fcm_token": "test_token_123" }
+
+3. Prescription বানাও medicine সহ
+POST /treatments/prescription/
+
+4. Celery Terminal এ দেখো
+[SCHEDULE] ✅ morning reminder scheduled...
+
+Low Stock Test করো
+bash# Django shell এ
+python manage.py shell
+
+>>> from prescriptions.tasks import check_low_stock_and_notify
+>>> check_low_stock_and_notify.delay()
+"""
