@@ -7,7 +7,7 @@ from .models import Medicine, NotificationLog
 
 
 @shared_task
-def send_grouped_medicine_reminder(user_id, slot_name, slot_time):
+def send_grouped_medicine_reminder(user_id, slot_name, slot_time, prescription_id=None):
     from users.models import Users
 
     try:
@@ -18,19 +18,20 @@ def send_grouped_medicine_reminder(user_id, slot_name, slot_time):
     today = timezone.now().date()
     slot_filter = {f"{slot_name.lower()}__isnull": False}
 
+    # ✅ Specific prescription filter
     medicines = Medicine.objects.filter(
         prescription__users=user,
+        prescription__id=prescription_id,
         **slot_filter
     ).select_related('prescription')
 
     active_medicines = []
-    seen = set()  # ✅ Duplicate বন্ধ
+    seen = set()
 
     for med in medicines:
         start_date = med.prescription.created_at.date()
         end_date = start_date + timedelta(days=med.how_many_day - 1)
 
-        # ✅ মেয়াদ check + duplicate check
         if start_date <= today <= end_date and med.name not in seen:
             active_medicines.append(med.name)
             seen.add(med.name)
@@ -51,7 +52,6 @@ def send_grouped_medicine_reminder(user_id, slot_name, slot_time):
         notification_type='medicine_reminder'
     )
 
-    # Re-schedule for tomorrow
     now = timezone.now()
     tomorrow_slot = datetime.combine(
         now.date() + timedelta(days=1),
@@ -62,12 +62,11 @@ def send_grouped_medicine_reminder(user_id, slot_name, slot_time):
 
     send_grouped_medicine_reminder.apply_async(
         args=[user_id, slot_name, slot_time],
+        kwargs={'prescription_id': prescription_id},
         eta=reminder_time
     )
 
     return f"Grouped reminder sent: {active_medicines}"
-
-
 @shared_task
 def check_low_stock_and_notify():
     threshold = getattr(settings, 'LOW_STOCK_THRESHOLD_DAYS', 3)

@@ -14,6 +14,7 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
     from .tasks import send_grouped_medicine_reminder
 
     user = instance.prescription.users
+    prescription_id = instance.prescription.id
     now = timezone.now()
 
     slots = {
@@ -31,10 +32,9 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
 
             slot_time_str = slot_time.strftime('%H:%M:%S')
 
-            # ✅ Same user+slot+time already scheduled হলে skip করো
-            schedule_key = f"{user.id}_{slot_name}_{slot_time_str}"
+            # ✅ Prescription ID দিয়ে unique key
+            schedule_key = f"{user.id}_{prescription_id}_{slot_name}_{slot_time_str}"
             if schedule_key in _scheduled:
-                print(f"[SCHEDULE] ⚠️ Already scheduled: {schedule_key}")
                 continue
 
             _scheduled.add(schedule_key)
@@ -47,8 +47,10 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
                 slot_datetime += timedelta(days=1)
                 reminder_time = slot_datetime - timedelta(minutes=30)
 
+            # ✅ prescription_id পাঠাও
             send_grouped_medicine_reminder.apply_async(
                 args=[user.id, slot_name, slot_time_str],
+                kwargs={'prescription_id': prescription_id},
                 eta=reminder_time
             )
-            print(f"[SCHEDULE] ✅ {slot_name} reminder scheduled for {instance.name} at {reminder_time}")
+            print(f"[SCHEDULE] ✅ {slot_name} scheduled for prescription {prescription_id} at {reminder_time}")
