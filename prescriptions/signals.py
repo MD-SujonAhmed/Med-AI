@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from .models import Medicine
 
 
@@ -9,6 +9,7 @@ from .models import Medicine
 def schedule_medicine_reminder(sender, instance, created, **kwargs):
     if not created:
         return
+
     from .tasks import send_grouped_medicine_reminder
 
     user = instance.prescription.users
@@ -23,9 +24,15 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
 
     for slot_name, slot_obj in slots.items():
         if slot_obj and slot_obj.time:
-            slot_time_str = slot_obj.time.strftime('%H:%M:%S')
+            
+            # ✅ string হলে convert করো
+            slot_time = slot_obj.time
+            if isinstance(slot_time, str):
+                slot_time = datetime.strptime(slot_time, '%H:%M:%S').time()
+            
+            slot_time_str = slot_time.strftime('%H:%M:%S')
 
-            slot_datetime = datetime.combine(now.date(), slot_obj.time)
+            slot_datetime = datetime.combine(now.date(), slot_time)
             slot_datetime = timezone.make_aware(slot_datetime)
             reminder_time = slot_datetime - timedelta(minutes=30)
 
