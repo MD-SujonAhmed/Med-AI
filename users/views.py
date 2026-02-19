@@ -355,6 +355,8 @@ class DeleteAccountView(APIView):
             {"message": "Account deleted permanently."},
             status=status.HTTP_200_OK
         )
+
+
 # ----------------------------- Admin Dashboard View -----------------------------
 
 class AdminUpdatePasswordView(APIView):
@@ -436,19 +438,19 @@ class AdminDashboardStatsView(APIView):
 
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
+    
 class UserManagementView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
     def get(self, request):
         users = Users.objects.all()
-        total_users = users.count()   # ✅ Query inside method
-
+        total_usaers= Users.objects.count()
         serializer = AdminUserListSerializer(users, many=True)
 
         return Response({
             "users": serializer.data,
-            "total_users": total_users
-        }, status=200)   
+            "total_users": total_usaers
+        }, status=200)    
     
     
 class DoctorListView(APIView):
