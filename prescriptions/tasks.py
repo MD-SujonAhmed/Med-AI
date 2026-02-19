@@ -16,19 +16,24 @@ def send_grouped_medicine_reminder(user_id, slot_name, slot_time):
         return "User not found"
 
     today = timezone.now().date()
-
     slot_filter = {f"{slot_name.lower()}__isnull": False}
+
     medicines = Medicine.objects.filter(
         prescription__users=user,
         **slot_filter
     ).select_related('prescription')
 
     active_medicines = []
+    seen = set()  # ✅ Duplicate বন্ধ
+
     for med in medicines:
         start_date = med.prescription.created_at.date()
         end_date = start_date + timedelta(days=med.how_many_day - 1)
-        if start_date <= today <= end_date:
+
+        # ✅ মেয়াদ check + duplicate check
+        if start_date <= today <= end_date and med.name not in seen:
             active_medicines.append(med.name)
+            seen.add(med.name)
 
     if not active_medicines:
         return "No active medicines for this slot"
@@ -46,6 +51,7 @@ def send_grouped_medicine_reminder(user_id, slot_name, slot_time):
         notification_type='medicine_reminder'
     )
 
+    # Re-schedule for tomorrow
     now = timezone.now()
     tomorrow_slot = datetime.combine(
         now.date() + timedelta(days=1),
@@ -58,19 +64,24 @@ def send_grouped_medicine_reminder(user_id, slot_name, slot_time):
         args=[user_id, slot_name, slot_time],
         eta=reminder_time
     )
+
     return f"Grouped reminder sent: {active_medicines}"
 
 
 @shared_task
 def check_low_stock_and_notify():
     threshold = getattr(settings, 'LOW_STOCK_THRESHOLD_DAYS', 3)
+
     low_stock = Medicine.objects.select_related(
         'prescription__users'
     ).filter(stock__lte=threshold, stock__gt=0)
+
     out_of_stock = Medicine.objects.select_related(
         'prescription__users'
     ).filter(stock=0)
+
     count = 0
+
     for med in low_stock:
         user = med.prescription.users
         body = f"⚠️ {med.name} has only {med.stock} day(s) of stock left!"
@@ -82,6 +93,7 @@ def check_low_stock_and_notify():
             medicine=med
         )
         count += 1
+
     for med in out_of_stock:
         user = med.prescription.users
         body = f"🚨 {med.name} is out of stock! Please buy now."
