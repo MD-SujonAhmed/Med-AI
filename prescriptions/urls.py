@@ -18,8 +18,8 @@ urlpatterns = [
     path('', include(router.urls)),
     path('prescription/from-ai/', CreatePrescriptionFromAIView.as_view(), name='prescription-from-ai'),
     # MediCine Stock
-    path('medicine/mark-taken/<int:medicine_id>/', MarkMedicineTakenView.as_view(), name='medicine-mark-taken'),
     path('medicine/stock/<int:medicine_id>/', MedicineStockView.as_view(), name='medicine-stock'),
+    path('medicine/mark-taken/<int:medicine_id>/', MarkMedicineTakenView.as_view(), name='medicine-mark-taken'),
     # Notification view Api 
     path('notifications/', UserNotificationListView.as_view(), name='user-notifications'),
 ]

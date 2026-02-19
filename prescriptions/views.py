@@ -1,10 +1,9 @@
-from rest_framework.response import Response  # ✅ সঠিক import
+from rest_framework.response import Response  
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
-
 from .models import Prescription, Patient, Medicine, pharmacy,NotificationLog
-from .serializers import PrescriptionSerializer, PramcySerializer, UserMedicineSerializer,NotificationLogSerializer, MedicalTestSerializer
+from .serializers import PrescriptionSerializer, PramcySerializer, UserMedicineSerializer,NotificationLogSerializer,MedicineStockSerializer
 from users.permissions import IsNormalUser
 from prescriptions.tasks import send_grouped_medicine_reminder, send_push_notification
 
@@ -162,15 +161,15 @@ class MedicineStockView(APIView):
         except Medicine.DoesNotExist:
             return Response({"error": "Medicine not found"}, status=404)
 
-        amount = request.data.get("amount", 0)
-        if not isinstance(amount, int) or amount <= 0:
-            return Response({"error": "Amount must be a positive number"}, status=400)
+        stock = request.data.get("stock", 0)
+        if not isinstance(stock, int) or stock <= 0:
+            return Response({"error": "stock must be a positive number"}, status=400)
 
-        medicine.stock += amount
+        medicine.stock += stock
         medicine.save()
 
         return Response({
-            "message": f"{amount} stock added successfully",
+            "message": f"{stock} stock added successfully",
             "medicine": medicine.name,
             "current_stock": medicine.stock
         })
@@ -218,12 +217,12 @@ class MedicineStockView(APIView):
         except Medicine.DoesNotExist:
             return Response({"error": "Medicine not found"}, status=404)
 
-        amount = serializer.validated_data["amount"]
-        medicine.stock += amount
+        stock = serializer.validated_data["stock"]
+        medicine.stock += stock
         medicine.save()
 
         return Response({
-            "message": f"{amount} stock added successfully",
+            "message": f"{stock} stock added successfully",
             "medicine": medicine.name,
             "current_stock": medicine.stock
         })

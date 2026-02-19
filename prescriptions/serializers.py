@@ -177,9 +177,8 @@ class NotificationLogSerializer(serializers.ModelSerializer):
             'medicine',
         ]
 
-
 class MedicineStockSerializer(serializers.Serializer):
-    amount = serializers.IntegerField(min_value=1)
+    stock = serializers.IntegerField(min_value=1)
 
 class MarkMedicineTakenSerializer(serializers.Serializer):
     medicine_id = serializers.IntegerField()
