@@ -32,9 +32,12 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
 
             slot_time_str = slot_time.strftime('%H:%M:%S')
 
-            # ✅ Prescription ID দিয়ে unique key
-            schedule_key = f"{user.id}_{prescription_id}_{slot_name}_{slot_time_str}"
+            # ✅ prescription + slot + exact time দিয়ে unique key
+            # মানে 10:52 আর 10:54 আলাদা task হবে
+            schedule_key = f"{prescription_id}_{slot_name}_{slot_time_str}"
+
             if schedule_key in _scheduled:
+                print(f"[SCHEDULE] ⚠️ Skip: {schedule_key}")
                 continue
 
             _scheduled.add(schedule_key)
@@ -47,10 +50,11 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
                 slot_datetime += timedelta(days=1)
                 reminder_time = slot_datetime - timedelta(minutes=30)
 
-            # ✅ prescription_id পাঠাও
+            # ✅ slot_time_str পাঠাচ্ছি তাই task জানবে কোন time এর জন্য
             send_grouped_medicine_reminder.apply_async(
                 args=[user.id, slot_name, slot_time_str],
                 kwargs={'prescription_id': prescription_id},
                 eta=reminder_time
             )
-            print(f"[SCHEDULE] ✅ {slot_name} scheduled for prescription {prescription_id} at {reminder_time}")
+            print(f"[SCHEDULE] ✅ {slot_name} {slot_time_str} → prescription {prescription_id} at {reminder_time}")
+            
