@@ -134,8 +134,8 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # AI Service
-# AI_CHATBOT_URL = config("AI_CHATBOT_URL")
-# AI_TTS_URL = config("AI_TTS_URL")
+AI_CHATBOT_URL = config("AI_CHATBOT_URL")
+AI_TTS_URL = config("AI_TTS_URL")
 
 # JWT Configuration
 SIMPLE_JWT = {
@@ -188,6 +188,6 @@ CELERY_BEAT_SCHEDULE = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # user = Users.objects.get(email="user@gmail.com")
-# This is my Praties
-AI_CHATBOT_URL = config("AI_CHATBOT_URL", default="http://127.0.0.1:8001")
-AI_TTS_URL = config("AI_TTS_URL", default="http://127.0.0.1:8002")
+# # This is my Praties
+# AI_CHATBOT_URL = config("AI_CHATBOT_URL", default="http://127.0.0.1:8001")
+# AI_TTS_URL = config("AI_TTS_URL", default="http://127.0.0.1:8002")
