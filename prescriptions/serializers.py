@@ -76,9 +76,9 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         for test in tests_data:
             MedicalTest.objects.create(prescription=prescription, **test)
         
-            # ✅ Prescription create হলেই stock check করো
-        from prescriptions.tasks import check_low_stock_and_notify
-        check_low_stock_and_notify.delay()
+        #   # ✅ Prescription create হলেই stock check করো
+        # from prescriptions.tasks import check_low_stock_and_notify
+        # check_low_stock_and_notify.delay()  
 
         return prescription
 
