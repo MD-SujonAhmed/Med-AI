@@ -162,12 +162,12 @@ class UserNotificationListView(APIView):
     permission_classes = [IsAuthenticated, IsNormalUser]
 
     def get(self, request):
+        # ✅ শুধু শেষ ২০টা দেখাও
         logs = NotificationLog.objects.filter(
             user=request.user
-        ).order_by('-sent_at')
+        ).order_by('-sent_at')[:20]
         serializer = NotificationLogSerializer(logs, many=True)
         return Response(serializer.data, status=200)
-
 class AdminNotificationListView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
@@ -175,3 +175,4 @@ class AdminNotificationListView(APIView):
         logs = NotificationLog.objects.filter(user=request.user).order_by('-sent_at')
         serializer = NotificationLogSerializer(logs, many=True)
         return Response(serializer.data, status=200)
+    
