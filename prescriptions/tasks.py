@@ -18,6 +18,77 @@ def send_grouped_medicine_reminder(user_id, slot_name, slot_time, prescription_i
     today = timezone.now().date()
     slot_filter = {f"{slot_name.lower()}__isnull": False}
 
+    medicines = Medicine.objects.filter(
+        prescription__users=user,
+        prescription__id=prescription_id,
+        **slot_filter
+    ).select_related('prescription')
+
+    active_medicines = []
+    seen = set()
+
+    for med in medicines:
+        start_date = med.prescription.created_at.date()
+        end_date = start_date + timedelta(days=med.how_many_day - 1)
+
+        if not (start_date <= today <= end_date):
+            continue
+
+        # ✅ Same exact time এর medicine শুধু এই notification এ
+        slot_obj = getattr(med, slot_name.lower())
+        if slot_obj:
+            med_time = slot_obj.time
+            if isinstance(med_time, str):
+                med_time = datetime.strptime(med_time, '%H:%M:%S').time()
+            
+            med_time_str = med_time.strftime('%H:%M:%S')
+            
+            # ✅ শুধু same time এর medicine নাও
+            if med_time_str == slot_time and med.name not in seen:
+                active_medicines.append(med.name)
+                seen.add(med.name)
+
+    if not active_medicines:
+        return f"No active medicines for {slot_name} at {slot_time}"
+
+    if len(active_medicines) == 1:
+        body = f"Time to take {active_medicines[0]}"
+    else:
+        names = ", ".join(active_medicines)
+        body = f"Time to take: {names}"
+
+    send_push_notification(
+        user,
+        f"💊 Medicine Reminder ({slot_name})",
+        body,
+        notification_type='medicine_reminder'
+    )
+
+    now = timezone.now()
+    tomorrow_slot = datetime.combine(
+        now.date() + timedelta(days=1),
+        datetime.strptime(slot_time, '%H:%M:%S').time()
+    )
+    tomorrow_slot = timezone.make_aware(tomorrow_slot)
+    reminder_time = tomorrow_slot - timedelta(minutes=30)
+
+    send_grouped_medicine_reminder.apply_async(
+        args=[user_id, slot_name, slot_time],
+        kwargs={'prescription_id': prescription_id},
+        eta=reminder_time
+    )
+
+    return f"Grouped reminder sent: {active_medicines}"
+    from users.models import Users
+
+    try:
+        user = Users.objects.get(id=user_id)
+    except Users.DoesNotExist:
+        return "User not found"
+
+    today = timezone.now().date()
+    slot_filter = {f"{slot_name.lower()}__isnull": False}
+
     # ✅ Specific prescription filter
     medicines = Medicine.objects.filter(
         prescription__users=user,
