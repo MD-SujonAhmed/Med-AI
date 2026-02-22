@@ -161,20 +161,25 @@ class UserNotificationListView(APIView):
     permission_classes = [IsAuthenticated, IsNormalUser]
 
     def get(self, request):
-        # ✅ শুধু আজকের notification
         today = timezone.now().date()
         logs = NotificationLog.objects.filter(
             user=request.user,
             sent_at__date=today
         ).order_by('-sent_at')
+
+        unread_count = logs.filter(is_read=False).count()
+        read_count = logs.filter(is_read=True).count()
+
         serializer = NotificationLogSerializer(logs, many=True)
-        return Response(serializer.data, status=200)
+        return Response({
+            "unread_count": unread_count,
+            "read_count": read_count,
+            "notifications": serializer.data
+        }, status=200)
 
     def delete(self, request):
-        # ✅ সব notification delete
         NotificationLog.objects.filter(user=request.user).delete()
         return Response({"message": "All notifications deleted!"}, status=200)
-
 
 class UserNotificationDetailView(APIView):
     permission_classes = [IsAuthenticated, IsNormalUser]
