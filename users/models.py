@@ -77,7 +77,13 @@ class UserProfile(models.Model):
 
 
 
-
+class NotificationLog(models.Model):
+    notification_type = models.CharField(max_length=20)
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    is_sent = models.BooleanField(default=False)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    medicine = models.CharField(max_length=255, null=True, blank=True)
 """
 GET dashboard/<parameter: date>/ - Retrieve dashboard data for a specific date.
 

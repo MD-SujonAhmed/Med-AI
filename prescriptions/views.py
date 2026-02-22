@@ -172,6 +172,6 @@ class AdminNotificationListView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
     def get(self, request):
-        logs = NotificationLog.objects.all().order_by('-sent_at')
+        logs = NotificationLog.objects.filter(user=request.user).order_by('-sent_at')
         serializer = NotificationLogSerializer(logs, many=True)
         return Response(serializer.data, status=200)

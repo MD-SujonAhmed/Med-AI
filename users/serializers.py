@@ -236,10 +236,6 @@ class DoctorListSerializer(serializers.ModelSerializer):
         fields = ['name', 'sex', 'specialization', 'hospital_name', 'doctor_email']
         
 
-class NotificationLogSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = NotificationLog
-        fields = ['id', 'notification_type', 'title', 'body', 'is_sent', 'sent_at', 'medicine']
 
 
 # Project Name: Med Ai
