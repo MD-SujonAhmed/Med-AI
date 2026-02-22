@@ -8,7 +8,8 @@ from .views import (
     MarkMedicineTakenView,
     UserNotificationListView,
     MedicineStockView,
-    AdminNotificationListView
+    AdminNotificationListView,
+    UserNotificationDetailView
 )
 
 router = DefaultRouter()
@@ -22,6 +23,7 @@ urlpatterns = [
     path('medicine/stock/<int:medicine_id>/', MedicineStockView.as_view(), name='medicine-stock'),
     path('medicine/mark-taken/<int:medicine_id>/', MarkMedicineTakenView.as_view(), name='medicine-mark-taken'),
     # Notification view Api 
-    path('notifications/', UserNotificationListView.as_view(), name='user-notifications'),
-    path('admin/notifications/', AdminNotificationListView.as_view(), name='admin-notifications'),
+    path('notifications/', UserNotificationListView.as_view()),
+    path('notifications/<int:notification_id>/', UserNotificationDetailView.as_view()),
+    path('admin/notifications/', AdminNotificationListView.as_view()),
 ]

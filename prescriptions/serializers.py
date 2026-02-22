@@ -124,8 +124,8 @@ class UserMedicineSerializer(serializers.ModelSerializer):
 class NotificationLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationLog
-        fields = ['id', 'notification_type', 'title', 'body', 'is_sent', 'sent_at', 'medicine']
-
+        fields = ['id', 'notification_type', 'title', 'body', 
+                  'is_sent', 'is_read', 'sent_at', 'medicine']
 
 class MedicineStockSerializer(serializers.Serializer):
     stock = serializers.IntegerField(min_value=1)
