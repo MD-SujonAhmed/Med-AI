@@ -105,3 +105,18 @@ class NotificationLog(models.Model):
     
     def __str__(self):
         return f"{self.user.email} - {self.notification_type} - {self.sent_at.strftime('%Y-%m-%d %H:%M')}"
+    
+    
+
+
+class AdminNotification(models.Model):
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title

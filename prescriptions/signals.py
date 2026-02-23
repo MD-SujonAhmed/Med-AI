@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import Medicine
+from .models import Medicine, AdminNotification, pharmacy
 
 _scheduled = set()
 
@@ -31,9 +31,6 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
                 slot_time = datetime.strptime(slot_time, '%H:%M:%S').time()
 
             slot_time_str = slot_time.strftime('%H:%M:%S')
-
-            # ✅ prescription + slot + exact time দিয়ে unique key
-            # মানে 10:52 আর 10:54 আলাদা task হবে
             schedule_key = f"{prescription_id}_{slot_name}_{slot_time_str}"
 
             if schedule_key in _scheduled:
@@ -50,11 +47,39 @@ def schedule_medicine_reminder(sender, instance, created, **kwargs):
                 slot_datetime += timedelta(days=1)
                 reminder_time = slot_datetime - timedelta(minutes=30)
 
-            # ✅ slot_time_str পাঠাচ্ছি তাই task জানবে কোন time এর জন্য
             send_grouped_medicine_reminder.apply_async(
                 args=[user.id, slot_name, slot_time_str],
                 kwargs={'prescription_id': prescription_id},
                 eta=reminder_time
             )
             print(f"[SCHEDULE] ✅ {slot_name} {slot_time_str} → prescription {prescription_id} at {reminder_time}")
-            
+
+
+# ✅ Admin Notifications
+from users.models import Users
+from doctors.models import Doctor
+
+@receiver(post_save, sender=Users)
+def notify_admin_new_user(sender, instance, created, **kwargs):
+    if created:
+        AdminNotification.objects.create(
+            title="New User Registered",
+            message=f"{instance.username} ({instance.email}) has joined."
+        )
+
+@receiver(post_save, sender=Doctor)
+def notify_admin_new_doctor(sender, instance, created, **kwargs):
+    if created:
+        AdminNotification.objects.create(
+            title="New Doctor Added",
+            message=f"Dr. {instance.name} ({instance.specialization}) added."
+        )
+
+@receiver(post_save, sender=pharmacy)
+def notify_admin_new_pharmacy(sender, instance, created, **kwargs):
+    if created:
+        AdminNotification.objects.create(
+            title="New Pharmacy Added",
+            message=f"{instance.pharmacy_name} has been added."
+        )
+        

@@ -13,6 +13,7 @@ from .serializers import (
 )
 from users.permissions import IsNormalUser, IsAdminOrSuperUser
 from prescriptions.tasks import send_push_notification
+from .models import AdminNotification
 
 
 class PrescriptionViewSet(viewsets.ModelViewSet):
@@ -207,15 +208,24 @@ class UserNotificationDetailView(APIView):
             return Response({"error": "Not found"}, status=404)
 
 
-class AdminNotificationListView(APIView):
+class AdminSystemNotificationView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
     def get(self, request):
-        logs = NotificationLog.objects.all().order_by('-sent_at')[:50]
-        unread_count = NotificationLog.objects.filter(is_read=False).count()
-        serializer = NotificationLogSerializer(logs, many=True)
-
+        notifications = AdminNotification.objects.all()[:50]
+        unread_count = AdminNotification.objects.filter(is_read=False).count()
+        data = [{
+            "id": n.id,
+            "title": n.title,
+            "message": n.message,
+            "is_read": n.is_read,
+            "created_at": n.created_at,
+        } for n in notifications]
         return Response({
             "unread_count": unread_count,
-            "notifications": serializer.data
-        }, status=200)
+            "notifications": data
+        })
+
+    def patch(self, request):
+        AdminNotification.objects.filter(is_read=False).update(is_read=True)
+        return Response({"message": "All marked as read!"})
