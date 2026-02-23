@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Doctor, DoctorNote
 from prescriptions.models import Prescription
+from datetime import date
 
 class DoctorNoteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,15 +33,11 @@ class DoctorSerializer(serializers.ModelSerializer):
         return list(Prescription.objects.filter(doctor=obj).values_list('id', flat=True))
     
     def get_next_appointment_date(self, obj):
-        # Get all prescriptions of this doctor with dates
-        dates = Prescription.objects.filter(
-            doctor=obj, 
-            next_appointment_date__isnull=False
-        ).values_list('next_appointment_date', flat=True)
+        today = date.today()
+        next_prescription = Prescription.objects.filter(
+        doctor=obj,
+        next_appointment_date__gte=today
+        ).order_by('next_appointment_date').first()
 
-        # Convert dates to string format YYYY-MM-DD
-        date_strings = [d.strftime('%Y-%m-%d') for d in dates]
-
-        # Return as a JSON array (even if empty)
-        return date_strings
+        return [next_prescription.next_appointment_date.strftime('%Y-%m-%d')] if next_prescription else []
 
