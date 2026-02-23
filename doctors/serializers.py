@@ -32,10 +32,15 @@ class DoctorSerializer(serializers.ModelSerializer):
         return list(Prescription.objects.filter(doctor=obj).values_list('id', flat=True))
     
     def get_next_appointment_date(self, obj):
-        prescription = (
-            Prescription.objects
-            .filter(doctor=obj)
-            .order_by('-next_appointment_date')
-            .first()
-        )
-        return prescription.next_appointment_date if prescription else None
+        # Get all prescriptions of this doctor with dates
+        dates = Prescription.objects.filter(
+            doctor=obj, 
+            next_appointment_date__isnull=False
+        ).values_list('next_appointment_date', flat=True)
+
+        # Convert dates to string format YYYY-MM-DD
+        date_strings = [d.strftime('%Y-%m-%d') for d in dates]
+
+        # Return as a JSON array (even if empty)
+        return date_strings
+
