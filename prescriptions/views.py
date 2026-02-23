@@ -211,17 +211,11 @@ class AdminNotificationListView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
     def get(self, request):
-        # ✅ সব notification + unread count
         logs = NotificationLog.objects.all().order_by('-sent_at')[:50]
         unread_count = NotificationLog.objects.filter(is_read=False).count()
         serializer = NotificationLogSerializer(logs, many=True)
-<<<<<<< HEAD
-        return Response(serializer.data, status=200)
-    
-    
-=======
+
         return Response({
             "unread_count": unread_count,
             "notifications": serializer.data
         }, status=200)
->>>>>>> 6961fde65b4e1a02f7af6b66766a0dc70289c88d
