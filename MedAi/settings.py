@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'users',
     'doctors',
     'prescriptions',
-    'chatbot'
+    'chatbot',
+    'notifications',
 ]
 
 MIDDLEWARE = [

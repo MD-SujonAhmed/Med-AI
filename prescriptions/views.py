@@ -175,3 +175,5 @@ class AdminNotificationListView(APIView):
         logs = NotificationLog.objects.filter(user=request.user).order_by('-sent_at')
         serializer = NotificationLogSerializer(logs, many=True)
         return Response(serializer.data, status=200)
+    
+    

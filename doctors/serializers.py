@@ -10,6 +10,7 @@ class DoctorNoteSerializer(serializers.ModelSerializer):
 class DoctorSerializer(serializers.ModelSerializer):
     notes = DoctorNoteSerializer(many=True, read_only=True)
     prescriptions = serializers.SerializerMethodField()
+    next_appointment_date = serializers.SerializerMethodField()
 
     class Meta:
         model = Doctor
@@ -23,8 +24,18 @@ class DoctorSerializer(serializers.ModelSerializer):
             'doctor_email',
             'notes',
             'prescriptions',
+            'next_appointment_date'
         ]
 
     def get_prescriptions(self, obj):
         # Return a list of prescription IDs for this doctor
         return list(Prescription.objects.filter(doctor=obj).values_list('id', flat=True))
+    
+    def get_next_appointment_date(self, obj):
+        prescription = (
+            Prescription.objects
+            .filter(doctor=obj)
+            .order_by('-next_appointment_date')
+            .first()
+        )
+        return prescription.next_appointment_date if prescription else None
