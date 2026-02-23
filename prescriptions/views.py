@@ -2,6 +2,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from django.utils import timezone
 from .models import Prescription, Patient, Medicine, pharmacy, NotificationLog
 from .serializers import (
     PrescriptionSerializer, 
@@ -60,7 +61,6 @@ class CreatePrescriptionFromAIView(APIView):
                 how_many_day=m.get("how_many_day") or 0,
                 stock=m.get("stock") or 0,
             )
-            # ✅ Signal automatically fire হবে
 
         return Response(
             {"success": True, "prescription_id": prescription.id},
@@ -109,7 +109,6 @@ class MarkMedicineTakenView(APIView):
         medicine.stock -= 1
         medicine.save()
 
-        # ✅ Stock কম হলে Alert পাঠাও
         if medicine.stock <= 3:
             if medicine.stock == 0:
                 msg = f"🚨 {medicine.name} is out of stock! Please buy now."
@@ -163,17 +162,66 @@ class UserNotificationListView(APIView):
 
     def get(self, request):
         logs = NotificationLog.objects.filter(
-            user=request.user
+            user=request.user,
         ).order_by('-sent_at')
-        serializer = NotificationLogSerializer(logs, many=True)
-        return Response(serializer.data, status=200)
+
+        unread_count = logs.filter(is_read=False).count()
+        read_count = logs.filter(is_read=True).count()
+
+        serializer = NotificationLogSerializer(logs[:50], many=True)
+        return Response({
+            "unread_count": unread_count,
+            "read_count": read_count,
+            "notifications": serializer.data
+        }, status=200)
+    def delete(self, request):
+        NotificationLog.objects.filter(user=request.user).delete()
+        return Response({"message": "All notifications deleted!"}, status=200)
+
+class UserNotificationDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsNormalUser]
+
+    def delete(self, request, notification_id):
+        # ✅ Specific notification delete
+        try:
+            log = NotificationLog.objects.get(
+                id=notification_id,
+                user=request.user
+            )
+            log.delete()
+            return Response({"message": "Notification deleted!"}, status=200)
+        except NotificationLog.DoesNotExist:
+            return Response({"error": "Not found"}, status=404)
+
+    def patch(self, request, notification_id):
+        # ✅ Read mark করো
+        try:
+            log = NotificationLog.objects.get(
+                id=notification_id,
+                user=request.user
+            )
+            log.is_read = True
+            log.save()
+            return Response({"message": "Marked as read!"}, status=200)
+        except NotificationLog.DoesNotExist:
+            return Response({"error": "Not found"}, status=404)
+
 
 class AdminNotificationListView(APIView):
     permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
 
     def get(self, request):
-        logs = NotificationLog.objects.filter(user=request.user).order_by('-sent_at')
+        # ✅ সব notification + unread count
+        logs = NotificationLog.objects.all().order_by('-sent_at')[:50]
+        unread_count = NotificationLog.objects.filter(is_read=False).count()
         serializer = NotificationLogSerializer(logs, many=True)
+<<<<<<< HEAD
         return Response(serializer.data, status=200)
     
     
+=======
+        return Response({
+            "unread_count": unread_count,
+            "notifications": serializer.data
+        }, status=200)
+>>>>>>> 6961fde65b4e1a02f7af6b66766a0dc70289c88d

@@ -78,6 +78,7 @@ class NotificationLog(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='notifications')
     notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
     title = models.CharField(max_length=255)
+    is_read = models.BooleanField(default=False)
     body = models.TextField()
     
     # Medicine reference (optional, যদি medicine reminder হয়)
