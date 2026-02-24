@@ -64,7 +64,7 @@ def notify_admin_new_user(sender, instance, created, **kwargs):
     if created:
         AdminNotification.objects.create(
             title="New User Registered",
-            message=f"{instance.username} ({instance.email}) has joined."
+            message=f"{instance.full_name} ({instance.email}) has joined."
         )
 
 @receiver(post_save, sender=Doctor)
