@@ -184,6 +184,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'prescriptions.tasks.check_low_stock_and_notify',
         'schedule': crontab(hour=8, minute=0),
     },
+    'delete-old-notifications-daily': {
+        'task': 'prescriptions.tasks.delete_old_notifications',
+        'schedule': crontab(hour=0, minute=0),
+    },
 }
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

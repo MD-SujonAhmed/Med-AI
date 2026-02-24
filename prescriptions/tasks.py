@@ -178,7 +178,6 @@ def check_low_stock_and_notify():
 
     return f"Alerts sent for {count} medicines"
 
-
 def send_push_notification(user, title, body, notification_type='medicine_reminder', medicine=None):
     log = NotificationLog.objects.create(
         user=user,
@@ -227,3 +226,10 @@ def send_push_notification(user, title, body, notification_type='medicine_remind
         log.error_message = str(e)
         log.save()
         print(f"[PUSH] ❌ Error for user {user.email}: {e}")
+
+
+@shared_task
+def delete_old_notifications():
+    cutoff = timezone.now() - timedelta(days=30)
+    deleted, _ = NotificationLog.objects.filter(sent_at__lt=cutoff).delete()
+    return f"{deleted} old notifications deleted"
