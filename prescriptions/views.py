@@ -213,19 +213,31 @@ class AdminSystemNotificationView(APIView):
 
     def get(self, request):
         notifications = AdminNotification.objects.all()[:50]
-        unread_count = AdminNotification.objects.filter(is_read=False).count()
         data = [{
             "id": n.id,
             "title": n.title,
             "message": n.message,
-            "is_read": n.is_read,
             "created_at": n.created_at,
         } for n in notifications]
         return Response({
-            "unread_count": unread_count,
+            "total": AdminNotification.objects.count(),
             "notifications": data
         })
 
-    def patch(self, request):
-        AdminNotification.objects.filter(is_read=False).update(is_read=True)
-        return Response({"message": "All marked as read!"})
+    def delete(self, request):
+        AdminNotification.objects.all().delete()
+        return Response({"message": "All notifications deleted!"})
+
+
+class AdminSystemNotificationDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrSuperUser]
+
+    def delete(self, request, notification_id):
+        try:
+            n = AdminNotification.objects.get(id=notification_id)
+            n.delete()
+            return Response({"message": "Notification deleted!"})
+        except AdminNotification.DoesNotExist:
+            return Response({"error": "Not found"}, status=404)
+        
+        

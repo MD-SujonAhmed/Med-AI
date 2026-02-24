@@ -9,7 +9,8 @@ from .views import (
     UserNotificationListView,
     MedicineStockView,
     UserNotificationDetailView,
-    AdminSystemNotificationView
+    AdminSystemNotificationView,
+    AdminSystemNotificationDetailView
 )
 
 router = DefaultRouter()
@@ -25,6 +26,9 @@ urlpatterns = [
     # Notification view Api 
     path('notifications/', UserNotificationListView.as_view()),
     path('notifications/<int:notification_id>/', UserNotificationDetailView.as_view()),
+    # Admin Notifications
     path('admin/system-notifications/', AdminSystemNotificationView.as_view()),
+    path('admin/system-notifications/<int:notification_id>/', AdminSystemNotificationDetailView.as_view()),
+
 ]
 
