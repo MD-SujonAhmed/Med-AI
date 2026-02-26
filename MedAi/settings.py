@@ -211,3 +211,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # # This is my Praties
 # AI_CHATBOT_URL = config("AI_CHATBOT_URL", default="http://127.0.0.1:8001")
 # AI_TTS_URL = config("AI_TTS_URL", default="http://127.0.0.1:8002")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
