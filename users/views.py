@@ -488,9 +488,11 @@ class SaveFCMTokenView(APIView):
         if not token:
             return Response({"detail": "fcm_token required"}, status=400)
 
+        # ✅ অন্য কোনো user এই same token ব্যবহার করলে clear করো
+        Users.objects.filter(fcm_token=token).exclude(id=request.user.id).update(fcm_token=None)
+
         user = request.user
         user.fcm_token = token
         user.save(update_fields=['fcm_token'])
 
         return Response({"success": True}, status=200)
-    
