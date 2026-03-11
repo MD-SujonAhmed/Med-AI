@@ -161,10 +161,11 @@ SIMPLE_JWT = {
 
 # CORS
 CORS_ALLOWED_ORIGINS = [
+    "https://medai.watch",
     "http://localhost:5173",
     "http://localhost:5174",
 ]
-
+CSRF_TRUSTED_ORIGINS = ["https://api.medai.watch"]
 # ============= Firebase Admin SDK Configuration =============
 import firebase_admin
 from firebase_admin import credentials
