@@ -12,7 +12,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-eqfq4=n$10h9pvcz1#=3f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['test15.fireai.agency', '172.252.13.97', '127.0.0.1']
+ALLOWED_HOSTS = ["*", "api.medai.watch","76.13.100.23"]
 
 AUTH_USER_MODEL = 'users.Users'  # Custom user model
 
